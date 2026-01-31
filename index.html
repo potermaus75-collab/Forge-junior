@@ -7,24 +7,38 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="start-screen" class="full-overlay">
+        <div class="login-box">
+            <h1>🔨 모루 키우기</h1>
+            <p>닉네임을 입력하세요</p>
+            <input type="text" id="nickname-input" placeholder="User Name">
+            <button id="start-game-btn">게임 시작 / 불러오기</button>
+        </div>
+    </div>
+
     <div class="game-container">
         <header class="top-bar">
-            <div class="currency">🔨 <span id="hammer-cnt">0</span></div>
-            <div class="currency">💰 <span id="gold-cnt">0</span></div>
-            <div class="currency">💎 <span id="dia-cnt">0</span></div>
+            <div class="resources">
+                <span class="currency">🔨 <span id="hammer-cnt">0</span></span>
+                <span class="currency">💰 <span id="gold-cnt">0</span></span>
+            </div>
+            <div class="settings">
+                <button id="reset-data-btn" class="small-btn">초기화</button>
+            </div>
         </header>
 
         <section class="battle-stage">
             <div class="stage-info">STAGE <span id="stage-num">1</span></div>
             <div class="battle-field">
                 <div class="character" id="player">🦸</div>
+                <div class="effect-text" id="damage-text"></div>
                 <div class="monster" id="enemy">👾</div>
             </div>
             <div class="hp-bars">
                 <div class="bar-container"><div class="bar" id="player-hp-bar"></div></div>
                 <div class="bar-container"><div class="bar" id="enemy-hp-bar"></div></div>
             </div>
-            <div id="damage-log">전투 로그...</div>
+            <div id="battle-status">전투 중...</div>
         </section>
 
         <section class="equipment-grid">
@@ -37,27 +51,35 @@
                 <button id="upgrade-btn">업그레이드 (💰<span id="upgrade-cost">100</span>)</button>
             </div>
             <div class="summon-area">
-                <div class="anvil-icon">⚒️</div>
+                <div class="anvil-icon" id="anvil-click">⚒️</div>
                 <button id="summon-btn" class="main-btn">장비 제작 (🔨10)</button>
             </div>
         </section>
     </div>
 
-    <div id="modal" class="modal hidden">
+    <div id="compare-modal" class="modal hidden">
         <div class="modal-content">
-            <h3>장비가 제작되었습니다!</h3>
+            <h3>장비 제작 완료!</h3>
             <div class="compare-box">
                 <div class="card" id="current-gear-card">
-                    <h4>현재 장비</h4>
-                    <div id="current-gear-stats">없음</div>
+                    <div class="card-title">현재 장착</div>
+                    <div id="current-gear-detail" class="gear-detail-view"></div>
                     <button id="keep-btn">현재 장비 유지</button>
                 </div>
                 <div class="card" id="new-gear-card">
-                    <h4>새 장비</h4>
-                    <div id="new-gear-stats">...</div>
-                    <button id="equip-btn">새 장비 장착</button>
+                    <div class="card-title">새로운 장비</div>
+                    <div id="new-gear-detail" class="gear-detail-view"></div>
+                    <button id="equip-btn">새 장비 교체</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="detail-modal" class="modal hidden">
+        <div class="modal-content small-modal">
+            <h3>장비 정보</h3>
+            <div id="selected-gear-detail" class="gear-detail-view box-style"></div>
+            <button id="close-detail-btn" style="margin-top:10px;">닫기</button>
         </div>
     </div>
 
