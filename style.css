@@ -1,112 +1,92 @@
 body {
-    margin: 0;
-    background-color: #333;
-    display: flex;
-    justify-content: center;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: white;
+    margin: 0; background-color: #222; color: white;
+    font-family: 'Segoe UI', sans-serif;
+    display: flex; justify-content: center; height: 100vh;
 }
 
+/* 시작 화면 오버레이 */
+.full-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #111; z-index: 999;
+    display: flex; justify-content: center; align-items: center;
+}
+.login-box { text-align: center; }
+.login-box input { padding: 10px; font-size: 16px; margin-right: 10px; }
+
 .game-container {
-    width: 360px;
-    height: 740px;
-    background-color: #5d9e5a; /* 잔디색 배경 */
-    display: flex;
-    flex-direction: column;
-    border: 2px solid #000;
-    position: relative;
-    overflow: hidden;
+    width: 380px; height: 100%; max-height: 800px;
+    background-color: #5d9e5a;
+    display: flex; flex-direction: column;
+    border: 2px solid #000; position: relative;
 }
 
 /* 상단바 */
 .top-bar {
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: space-around;
-    padding: 10px;
+    background: rgba(0,0,0,0.6); padding: 10px;
+    display: flex; justify-content: space-between; align-items: center;
 }
+.small-btn { padding: 5px 10px; font-size: 12px; background: #f44336; }
 
 /* 전투 구역 */
 .battle-stage {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: relative;
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
 }
-.battle-field {
-    width: 100%;
-    display: flex;
-    justify-content: space-around;
-    font-size: 50px;
-    margin-bottom: 20px;
-}
+.battle-field { width: 100%; display: flex; justify-content: space-around; font-size: 50px; margin-bottom: 10px; }
 .hp-bars { width: 80%; }
-.bar-container {
-    width: 100%;
-    height: 10px;
-    background: #333;
-    margin-bottom: 5px;
-    border-radius: 5px;
-}
-.bar { height: 100%; background: red; width: 100%; transition: width 0.2s; }
+.bar-container { width: 100%; height: 8px; background: #333; margin-bottom: 4px; border-radius: 4px; }
+.bar { height: 100%; width: 100%; transition: width 0.2s; }
 #player-hp-bar { background: #4caf50; }
-#damage-log { font-size: 12px; margin-top: 10px; height: 20px; }
+#enemy-hp-bar { background: #f44336; }
+#battle-status { font-size: 12px; margin-top: 5px; height: 15px; }
 
 /* 장비 슬롯 */
-.equipment-grid {
-    background: #e0e0e0;
-    padding: 10px;
-    display: flex;
-    justify-content: center;
-}
-.slots-container {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-}
+.equipment-grid { background: #333; padding: 15px; }
+.slots-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .slot {
-    width: 60px;
-    height: 60px;
-    background: #7a6a96; /* 보라색 계열 */
-    border-radius: 8px;
-    border: 2px solid #333;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    cursor: pointer;
+    width: 70px; height: 70px;
+    background: #444; border: 2px solid #111; border-radius: 8px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 11px; cursor: pointer; position: relative;
+    text-shadow: 1px 1px 2px black;
 }
-.slot.empty { opacity: 0.5; }
+
+/* 등급별 배경색 정의 */
+.grade-0 { background: #ffffff; color: black; text-shadow: none; } /* 원시 */
+.grade-1 { background: #87ceeb; color: black; text-shadow: none; } /* 중세 */
+.grade-2 { background: #90ee90; color: black; text-shadow: none; } /* 근대 */
+.grade-3 { background: #ffd700; color: black; text-shadow: none; } /* 현대 */
+.grade-4 { background: #ff4444; color: white; } /* 우주 */
+.grade-5 { background: #800080; color: white; } /* 항성 */
+.grade-6 { background: #98ff98; color: black; text-shadow: none; } /* 다중우주 (민트) */
+.grade-7 { background: #000080; color: white; } /* 양자 */
+.grade-8 { background: #d2b48c; color: black; text-shadow: none; } /* 지하세계 */
+.grade-9 { 
+    background: linear-gradient(to bottom right, #ffa500, #ffff00); 
+    color: black; text-shadow: none; border: 2px solid gold;
+} /* 신성 */
 
 /* 하단 컨트롤 */
-.controls {
-    background: #fff;
-    color: black;
-    padding: 20px;
-    border-top: 4px solid #ccc;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
+.controls { background: #fff; color: black; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
 .anvil-status { display: flex; justify-content: space-between; align-items: center; }
-.summon-area { display: flex; align-items: center; justify-content: center; gap: 20px; }
-.anvil-icon { font-size: 40px; }
-button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px; background: #2196F3; color: white; font-weight: bold; }
-button:active { transform: scale(0.95); }
+.summon-area { display: flex; align-items: center; justify-content: center; gap: 15px; }
+.main-btn { padding: 12px 24px; font-size: 16px; background: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer; }
 
-/* 모달(팝업) */
+/* 모달 공통 */
 .hidden { display: none !important; }
 .modal {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.8);
+    background: rgba(0,0,0,0.85); z-index: 100;
     display: flex; justify-content: center; align-items: center;
-    z-index: 100;
 }
-.modal-content {
-    background: white; color: black; padding: 20px; border-radius: 10px; width: 90%; text-align: center;
-}
-.compare-box { display: flex; gap: 10px; margin-top: 20px; }
-.card { flex: 1; border: 1px solid #ddd; padding: 10px; border-radius: 5px; font-size: 12px; }
+.modal-content { background: #222; color: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 350px; text-align: center; }
+.compare-box { display: flex; gap: 5px; margin-top: 10px; }
+.card { flex: 1; border: 1px solid #555; padding: 5px; border-radius: 5px; background: #333; }
+.card-title { font-size: 12px; margin-bottom: 5px; color: #aaa; }
+
+/* 장비 정보 상세 뷰 */
+.gear-detail-view { text-align: left; padding: 10px; min-height: 120px; }
+.view-name { font-size: 14px; font-weight: bold; margin-bottom: 5px; }
+.view-main { font-size: 20px; font-weight: bold; color: #ffeb3b; margin-bottom: 8px; border-bottom: 1px solid #555; padding-bottom: 5px;}
+.view-sub { font-size: 11px; color: #ccc; line-height: 1.4; }
+.box-style { background: #333; border: 1px solid #555; border-radius: 5px; }
