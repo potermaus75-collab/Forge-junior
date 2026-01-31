@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anvil Clicker RPG</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <header class="top-bar">
+            <div class="currency">🔨 <span id="hammer-cnt">0</span></div>
+            <div class="currency">💰 <span id="gold-cnt">0</span></div>
+            <div class="currency">💎 <span id="dia-cnt">0</span></div>
+        </header>
+
+        <section class="battle-stage">
+            <div class="stage-info">STAGE <span id="stage-num">1</span></div>
+            <div class="battle-field">
+                <div class="character" id="player">🦸</div>
+                <div class="monster" id="enemy">👾</div>
+            </div>
+            <div class="hp-bars">
+                <div class="bar-container"><div class="bar" id="player-hp-bar"></div></div>
+                <div class="bar-container"><div class="bar" id="enemy-hp-bar"></div></div>
+            </div>
+            <div id="damage-log">전투 로그...</div>
+        </section>
+
+        <section class="equipment-grid">
+            <div id="equip-slots" class="slots-container"></div>
+        </section>
+
+        <section class="controls">
+            <div class="anvil-status">
+                <div>모루 Lv.<span id="anvil-lv">1</span></div>
+                <button id="upgrade-btn">업그레이드 (💰<span id="upgrade-cost">100</span>)</button>
+            </div>
+            <div class="summon-area">
+                <div class="anvil-icon">⚒️</div>
+                <button id="summon-btn" class="main-btn">장비 제작 (🔨10)</button>
+            </div>
+        </section>
+    </div>
+
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>장비가 제작되었습니다!</h3>
+            <div class="compare-box">
+                <div class="card" id="current-gear-card">
+                    <h4>현재 장비</h4>
+                    <div id="current-gear-stats">없음</div>
+                    <button id="keep-btn">현재 장비 유지</button>
+                </div>
+                <div class="card" id="new-gear-card">
+                    <h4>새 장비</h4>
+                    <div id="new-gear-stats">...</div>
+                    <button id="equip-btn">새 장비 장착</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
