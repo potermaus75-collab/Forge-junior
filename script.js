@@ -1,328 +1,365 @@
-// --- 설정 데이터 ---
+// --- 1. 설정 데이터 ---
 const PARTS = [
-    { id: 'helmet', name: '헬멧', mainStat: 'hp', type: 'armor' },
-    { id: 'armor', name: '갑옷', mainStat: 'hp', type: 'armor' },
-    { id: 'boots', name: '신발', mainStat: 'hp', type: 'armor' },
-    { id: 'belt', name: '벨트', mainStat: 'hp', type: 'armor' },
-    { id: 'weapon', name: '무기', mainStat: 'dmg', type: 'weapon' },
-    { id: 'glove', name: '장갑', mainStat: 'dmg', type: 'armor' },
-    { id: 'neck', name: '목걸이', mainStat: 'dmg', type: 'armor' },
-    { id: 'ring', name: '반지', mainStat: 'dmg', type: 'armor' }
+    { id: 'helmet', name: '헬멧', mainStat: 'hp', icon: '🪖' },
+    { id: 'armor', name: '갑옷', mainStat: 'hp', icon: '🥋' },
+    { id: 'boots', name: '신발', mainStat: 'hp', icon: '👢' },
+    { id: 'belt', name: '벨트', mainStat: 'hp', icon: '🎗️' },
+    { id: 'weapon', name: '무기', mainStat: 'dmg', icon: '⚔️' },
+    { id: 'glove', name: '장갑', mainStat: 'dmg', icon: '🥊' },
+    { id: 'neck', name: '목걸이', mainStat: 'dmg', icon: '📿' },
+    { id: 'ring', name: '반지', mainStat: 'dmg', icon: '💍' }
 ];
 
 const GRADE_INFO = [
-    { name: '원시', color: 'grade-0', rate: 1.0 },
-    { name: '중세', color: 'grade-1', rate: 1.5 },
-    { name: '근대', color: 'grade-2', rate: 2.5 },
-    { name: '현대', color: 'grade-3', rate: 4.0 },
-    { name: '우주', color: 'grade-4', rate: 6.5 },
-    { name: '항성', color: 'grade-5', rate: 10.0 },
-    { name: '다중우주', color: 'grade-6', rate: 15.0 },
-    { name: '양자', color: 'grade-7', rate: 25.0 },
-    { name: '지하세계', color: 'grade-8', rate: 40.0 },
-    { name: '신성', color: 'grade-9', rate: 100.0 }
+    { name: '원시', class: 'g-0', mul: 1.0 },
+    { name: '중세', class: 'g-1', mul: 1.2 },
+    { name: '근대', class: 'g-2', mul: 1.5 },
+    { name: '현대', class: 'g-3', mul: 2.0 },
+    { name: '우주', class: 'g-4', mul: 3.0 },
+    { name: '항성', class: 'g-5', mul: 5.0 },
+    { name: '다중우주', class: 'g-6', mul: 8.0 }, // 바다색
+    { name: '양자', class: 'g-7', mul: 12.0 },
+    { name: '지하세계', class: 'g-8', mul: 20.0 },
+    { name: '신성', class: 'g-9', mul: 50.0 }
 ];
 
-const SUB_STATS = [
-    { type: 'critRate', name: '치명타%', weight: 1 },
-    { type: 'critDmg', name: '치명피해%', weight: 1 },
-    { type: 'doubleHit', name: '더블찬스%', weight: 1 },
-    { type: 'atkSpd', name: '공속%', weight: 1 },
-    { type: 'lifesteal', name: '흡혈%', weight: 1 },
-    { type: 'dmgPct', name: '피해증가%', weight: 2 },
-    { type: 'hpPct', name: '체력증가%', weight: 2 }
+// 보조 옵션 정의 (최대 수치)
+const SUB_STATS_CONFIG = [
+    { key: 'atkSpd', name: '공격 속도', max: 40, unit: '%' },
+    { key: 'block', name: '블록 확률', max: 5, unit: '%' },
+    { key: 'critRate', name: '치명타 확률', max: 12, unit: '%' },
+    { key: 'critDmg', name: '치명타 피해', max: 100, unit: '%' },
+    { key: 'dmgPct', name: '피해', max: 15, unit: '%' },
+    { key: 'doubleHit', name: '더블 찬스', max: 40, unit: '%' },
+    { key: 'hpPct', name: '체력', max: 15, unit: '%' },
+    { key: 'hpRegen', name: '체력 재생', max: 6, unit: '%' },
+    { key: 'lifesteal', name: '생명력 흡수', max: 20, unit: '%' },
+    { key: 'meleeDmg', name: '근접 피해', max: 50, unit: '%' },
+    { key: 'rangeDmg', name: '원거리 피해', max: 15, unit: '%' },
+    { key: 'cooldown', name: '스킬 재사용', max: 7, unit: '%' },
+    { key: 'skillDmg', name: '스킬 피해', max: 30, unit: '%' }
 ];
 
-// --- 상태 변수 ---
-let gameState = {
-    nick: '', gold: 0, hammers: 100, anvilLevel: 1, 
-    mainStage: 1, subStage: 1, equipment: {}
+// 스킬 정의
+const SKILLS = {
+    1: { name: "강타", cd: 5, icon: '⚡' }, // 5초 쿨타임, 강한 공격
+    2: { name: "회복", cd: 10, icon: '❤️' }  // 10초 쿨타임, 체력 회복
+};
+
+// --- 2. 게임 상태 ---
+let game = {
+    nick: '', gold: 0, hammers: 100, anvilLv: 1, 
+    stageMain: 1, stageSub: 1, equipment: {}
 };
 let battle = { 
-    pHp: 100, pMaxHp: 100, eHp: 100, eMaxHp: 100, 
-    stats: {}, state: 'idle', // idle, walking, fighting
-    lastAtk: 0 
+    pHp: 100, pMax: 100, eHp: 100, eMax: 100, 
+    stats: {}, state: 'idle', lastAtk: 0,
+    skillCD: { 1: 0, 2: 0 } // 스킬 쿨타임 종료 시간
 };
 let tempGear = null;
-let saveTimer = null;
+let animReq = null;
 
-// --- 1. 통계 계산 (원거리 너프 적용) ---
+// --- 3. 로직 함수 ---
+
+// 스탯 계산
 function calcStats() {
-    let s = { hp: 200, dmg: 20, crt: 5, cdmg: 150, dbl: 0, spd: 1.0, life: 0 };
+    let s = { 
+        hp: 200, dmg: 20, 
+        atkSpd: 0, block: 0, critRate: 5, critDmg: 150, 
+        dmgPct: 0, doubleHit: 0, hpPct: 0, hpRegen: 0, 
+        lifesteal: 0, meleeDmg: 0, rangeDmg: 0, 
+        cooldown: 0, skillDmg: 0
+    };
     
-    // 무기 타입 확인
-    let wType = 'melee';
-    if(gameState.equipment['weapon'] && gameState.equipment['weapon'].isRange) wType = 'range';
+    let isRange = false;
+    if(game.equipment['weapon'] && game.equipment['weapon'].isRange) isRange = true;
 
-    Object.values(gameState.equipment).forEach(g => {
+    // 장비 스탯 합산
+    Object.values(game.equipment).forEach(g => {
         if(g.mainType === 'hp') s.hp += g.mainVal;
         if(g.mainType === 'dmg') s.dmg += g.mainVal;
         
         g.subs.forEach(sub => {
-            if(sub.type === 'hpPct') s.hp *= (1 + sub.val/100);
-            if(sub.type === 'dmgPct') s.dmg *= (1 + sub.val/100);
-            if(sub.type === 'critRate') s.crt += sub.val;
-            if(sub.type === 'critDmg') s.cdmg += sub.val;
-            if(sub.type === 'doubleHit') s.dbl += sub.val;
-            if(sub.type === 'atkSpd') s.spd += (sub.val/100);
-            if(sub.type === 'lifesteal') s.life += sub.val;
+            if(s[sub.key] !== undefined) s[sub.key] += sub.val;
         });
     });
 
-    s.hp = Math.floor(s.hp);
-    s.dmg = Math.floor(s.dmg);
+    // % 적용
+    s.hp = Math.floor(s.hp * (1 + s.hpPct/100));
+    s.dmg = Math.floor(s.dmg * (1 + s.dmgPct/100));
+    
+    // 무기 타입별 추가 피해
+    if(isRange) s.dmg = Math.floor(s.dmg * (1 + s.rangeDmg/100));
+    else s.dmg = Math.floor(s.dmg * (1 + s.meleeDmg/100));
 
-    // [요청 반영] 원거리 피해량 20% 너프
-    if(wType === 'range') {
-        s.dmg = Math.floor(s.dmg * 0.8);
-    }
+    // 공속 변환 (기본 1.0 + %)
+    s.finalSpd = 1.0 * (1 + s.atkSpd/100);
 
     battle.stats = s;
-    battle.stats.wType = wType;
-    battle.pMaxHp = s.hp;
-    if(battle.pHp > battle.pMaxHp) battle.pHp = battle.pMaxHp;
-    
-    // 무기 아이콘 변경
-    const heroWeapon = document.getElementById('hero-weapon');
-    if(wType === 'range') heroWeapon.className = 'weapon-hand bow';
-    else heroWeapon.className = 'weapon-hand sword';
+    battle.stats.isRange = isRange;
+    battle.pMax = s.hp;
+    if(battle.pHp > battle.pMax) battle.pHp = battle.pMax;
+
+    // 무기 그래픽 변경
+    document.getElementById('hero-weapon').className = isRange ? 'weapon bow' : 'weapon sword';
 }
 
-// --- 2. 스테이지 진행 (워킹 애니메이션) ---
+// 몬스터 생성 (워킹 애니메이션)
 function spawnEnemy() {
-    battle.state = 'walking'; // 상태 변경
+    battle.state = 'walking';
+    
+    // 스테이지 난이도
+    const factor = (game.stageMain - 1) * 10 + game.stageSub;
+    const isBoss = (game.stageSub === 10);
+    const isMid = (game.stageSub === 5);
+    const mul = isBoss ? 5 : (isMid ? 2.5 : 1);
 
-    // 1. 적 스탯 설정
-    const stageFactor = (gameState.mainStage - 1) * 10 + gameState.subStage;
-    let isBoss = (gameState.subStage === 10);
-    let isMid = (gameState.subStage === 5);
-    let multiplier = isBoss ? 5.0 : (isMid ? 2.5 : 1.0);
-
-    // 보스 UI 처리
-    const mobArt = document.getElementById('enemy-art');
-    const bossTag = document.getElementById('boss-tag');
+    // 몬스터 UI
+    const mArt = document.getElementById('enemy-art');
+    const badge = document.getElementById('boss-badge');
     if(isBoss || isMid) {
-        mobArt.className = 'css-monster boss';
-        bossTag.innerText = isBoss ? "☠️BOSS" : "😈MID";
-        bossTag.classList.remove('hidden');
+        mArt.classList.add('boss');
+        badge.classList.remove('hidden');
+        badge.innerText = isBoss ? "BOSS" : "MID";
     } else {
-        mobArt.className = 'css-monster slime';
-        bossTag.classList.add('hidden');
+        mArt.classList.remove('boss');
+        badge.classList.add('hidden');
     }
 
-    // 체력/공격력 설정
-    let baseHp = 100 * Math.pow(1.15, stageFactor) * multiplier;
-    let baseAtk = 10 * Math.pow(1.1, stageFactor) * multiplier;
-    battle.eMaxHp = Math.floor(baseHp);
-    battle.eHp = battle.eMaxHp;
-    battle.eAtk = Math.floor(baseAtk);
+    // 스탯
+    battle.eMax = Math.floor(100 * Math.pow(1.15, factor) * mul);
+    battle.eHp = battle.eMax;
+    battle.eAtk = Math.floor(10 * Math.pow(1.1, factor) * mul);
 
-    document.getElementById('stage-num').innerText = `${gameState.mainStage}-${gameState.subStage}`;
-    updateBars();
+    document.getElementById('stage-num').innerText = `${game.stageMain}-${game.stageSub}`;
+    updateHp();
 
-    // 2. 워킹 애니메이션 시작
-    const heroWrap = document.getElementById('hero-wrapper');
-    const enemyWrap = document.getElementById('enemy-wrapper');
-
-    // 클래스 리셋 (애니메이션 재실행을 위해)
-    heroWrap.className = 'unit-wrapper hero-start-pos';
-    enemyWrap.className = 'unit-wrapper enemy-start-pos';
+    // 워킹 연출
+    const hero = document.getElementById('hero-wrapper');
+    const enemy = document.getElementById('enemy-wrapper');
     
-    // 리플로우 강제
-    void heroWrap.offsetWidth;
+    // 위치 리셋
+    hero.className = 'unit-wrapper hero-pos';
+    enemy.className = 'unit-wrapper enemy-pos';
+    void hero.offsetWidth; // reflow
 
-    // 이동 클래스 부여
-    const isRange = battle.stats.wType === 'range';
-    heroWrap.classList.add(isRange ? 'walk-in-range' : 'walk-in-melee');
-    enemyWrap.classList.add('walk-in-enemy');
+    // 이동 시작
+    const isRange = battle.stats.isRange;
+    hero.classList.add(isRange ? 'hero-walk-range' : 'hero-walk-melee');
+    enemy.classList.add('enemy-walk');
 
-    // 3. 전투 시작 타이밍
-    // 원거리는 걷는 도중(0.5초 후)부터 공격 가능, 근거리는 1.5초(도착) 후 전투
-    let fightDelay = isRange ? 500 : 1500;
-    
-    setTimeout(() => {
-        battle.state = 'fighting';
-    }, 1500); // 몬스터와 만나는 시간은 1.5초로 고정 (적의 공격 시작 시점)
-
-    // 원거리는 미리 공격 시작하도록 플래그 처리
-    if(isRange) {
-        setTimeout(() => {
-            // 원거리용 임시 전투 상태 (플레이어만 공격)
-            if(battle.state === 'walking') battle.earlyFire = true; 
-        }, 200);
-    } else {
-        battle.earlyFire = false;
-    }
+    setTimeout(() => { battle.state = 'fighting'; }, 1500);
 }
 
-// --- 3. 전투 루프 ---
+// 전투 루프
 function gameLoop(time) {
-    requestAnimationFrame(gameLoop);
-    
-    // 전투 중이거나, 원거리 조기 사격 모드일 때
-    let canAttack = (battle.state === 'fighting') || (battle.earlyFire && battle.eHp > 0);
-    if (!canAttack) return;
+    animReq = requestAnimationFrame(gameLoop);
+    updateSkillCD(time); // 스킬 쿨타임 UI 갱신
 
-    const atkInterval = 1000 / battle.stats.spd;
-    
-    if (time - battle.lastAtk > atkInterval) {
+    if(battle.state !== 'fighting') return;
+
+    // 플레이어 공격
+    const atkGap = 1000 / battle.stats.finalSpd;
+    if(time - battle.lastAtk > atkGap) {
         battle.lastAtk = time;
         playerAttack();
     }
 
-    // 적의 공격 (완전히 만났을 때만)
-    if (battle.state === 'fighting') {
-        // 적 공격 속도는 단순하게 프레임당 확률 혹은 플레이어 공격 턴에 맞춰 반격
-        // 여기선 플레이어 공격 시점에 같이 반격받는 턴제 느낌으로 구현 (단순화)
-        // 실제로는 별도 타이머가 좋으나 코드 복잡도상 반격 로직으로 처리
-        enemyAttack(); 
+    // 적 공격 (랜덤)
+    if(Math.random() < 0.02) { 
+        // 블록 확률 체크
+        if(Math.random() * 100 < battle.stats.block) {
+            showDmg(0, false, false, true); // Blocked
+        } else {
+            battle.pHp -= battle.eAtk;
+            if(battle.pHp <= 0) {
+                battle.pHp = battle.pMax;
+                battle.eHp = battle.eMax; // 재시작
+            }
+            updateHp();
+        }
     }
 }
 
 function playerAttack() {
     // 애니메이션
-    const wHand = document.getElementById('hero-weapon');
-    const isRange = battle.stats.wType === 'range';
-    wHand.className = isRange ? 'weapon-hand bow hero-shoot-anim' : 'weapon-hand sword hero-atk-anim';
-    setTimeout(()=> wHand.classList.remove('hero-shoot-anim', 'hero-atk-anim'), 200);
+    const wp = document.getElementById('hero-weapon');
+    const anim = battle.stats.isRange ? 'anim-shoot' : 'anim-swing';
+    wp.classList.remove(anim); void wp.offsetWidth; wp.classList.add(anim);
 
-    // 데미지 계산
+    // 데미지
     let dmg = battle.stats.dmg;
-    let isCrit = Math.random() * 100 < battle.stats.crt;
-    if(isCrit) dmg *= (battle.stats.cdmg / 100);
+    let isCrit = Math.random() * 100 < battle.stats.critRate;
+    if(isCrit) dmg *= (battle.stats.critDmg / 100);
 
-    spawnDmgText(Math.floor(dmg), isCrit, false);
-    
-    // 체력 감소
-    battle.eHp -= dmg;
-    
+    hitEnemy(dmg, isCrit, false);
+
     // 더블 찬스
-    if(Math.random() * 100 < battle.stats.dbl) {
-        setTimeout(() => {
-            spawnDmgText(Math.floor(dmg*0.5), false, true);
-            battle.eHp -= (dmg * 0.5);
-            checkWin();
-        }, 200);
+    if(Math.random() * 100 < battle.stats.doubleHit) {
+        setTimeout(() => hitEnemy(dmg, false, true), 150);
     }
+}
+
+function hitEnemy(dmg, isCrit, isDouble) {
+    battle.eHp -= dmg;
+    showDmg(Math.floor(dmg), isCrit, isDouble, false);
     
+    // 피격 모션
+    const en = document.getElementById('enemy-art');
+    en.classList.remove('anim-hit'); void en.offsetWidth; en.classList.add('anim-hit');
+
     // 흡혈
-    if(battle.stats.life > 0) {
-        battle.pHp = Math.min(battle.pMaxHp, battle.pHp + dmg * (battle.stats.life/100));
+    if(battle.stats.lifesteal > 0) {
+        battle.pHp = Math.min(battle.pMax, battle.pHp + dmg * (battle.stats.lifesteal/100));
     }
+    updateHp();
 
-    checkWin();
-    updateBars();
-}
-
-function enemyAttack() {
-    // 몬스터는 플레이어보다 느리게 공격한다고 가정 (약 50% 확률로 턴마다 공격)
-    if(Math.random() > 0.5) return; 
-
-    battle.pHp -= battle.eAtk;
-    if(battle.pHp <= 0) {
-        // 패배: 스테이지 리셋 없이 체력 회복
-        battle.pHp = battle.pMaxHp;
-        battle.eHp = battle.eMaxHp;
-        battle.state = 'idle'; // 잠시 멈춤
-        setTimeout(() => spawnEnemy(), 1000); // 재시작
-    }
-    updateBars();
-}
-
-function checkWin() {
     if(battle.eHp <= 0) {
-        battle.eHp = 0;
-        battle.state = 'idle'; // 전투 종료
-        battle.earlyFire = false;
-        
-        // 보상
-        const stageFactor = (gameState.mainStage - 1) * 10 + gameState.subStage;
-        gameState.gold += stageFactor * 10;
-        gameState.hammers += 2;
-        
-        // 스테이지 업
-        gameState.subStage++;
-        if(gameState.subStage > 10) {
-            gameState.mainStage++;
-            gameState.subStage = 1;
-        }
-        
-        updateUI();
-        
-        // 몬스터 죽는 연출 후 다음 스테이지
-        const enemyWrap = document.getElementById('enemy-wrapper');
-        enemyWrap.style.transform = 'translateY(50px) scale(0)'; // 쓰러짐
-        
-        setTimeout(() => spawnEnemy(), 1000);
+        winStage();
     }
 }
 
-function spawnDmgText(val, isCrit, isDouble) {
-    const layer = document.getElementById('damage-layer');
-    const el = document.createElement('div');
-    el.className = 'floating-txt';
-    el.innerText = isDouble ? `Double! ${val}` : val;
-    el.style.left = '60%'; // 몬스터 쪽
-    el.style.top = '50%';
+function winStage() {
+    battle.state = 'idle';
+    game.gold += (game.stageMain * 10 + game.stageSub) * 5;
+    game.hammers += 2;
+    updateRes();
     
-    if(isCrit) { el.style.color = '#ff4444'; el.style.fontSize = '24px'; }
-    if(isDouble) { el.style.color = '#ffd700'; }
-    
-    layer.appendChild(el);
-    setTimeout(() => el.remove(), 800);
+    game.stageSub++;
+    if(game.stageSub > 10) { game.stageMain++; game.stageSub = 1; }
+
+    const en = document.getElementById('enemy-wrapper');
+    en.style.transform = 'translateY(100px) scale(0)';
+    setTimeout(spawnEnemy, 1000);
 }
 
-// --- 4. 장비 제작 (옵션 제한) ---
+// --- 4. 스킬 시스템 ---
+function useSkill(slotId) {
+    if(battle.state !== 'fighting') return;
+    const now = Date.now();
+    if(now < battle.skillCD[slotId]) return; // 쿨타임 중
+
+    const skill = SKILLS[slotId];
+    // 쿨타임 적용 (CDR 적용)
+    const cdr = battle.stats.cooldown; 
+    const realCD = skill.cd * 1000 * (1 - cdr/100);
+    battle.skillCD[slotId] = now + realCD;
+
+    // 효과 발동
+    if(slotId === 1) { // 강타
+        let dmg = battle.stats.dmg * 3 * (1 + battle.stats.skillDmg/100);
+        hitEnemy(dmg, true, false); // 확정 크리티컬
+    } else if(slotId === 2) { // 회복
+        let heal = battle.pMax * 0.3 * (1 + battle.stats.skillDmg/100); // 30% 회복
+        battle.pHp = Math.min(battle.pMax, battle.pHp + heal);
+        updateHp();
+    }
+}
+
+function updateSkillCD(now) {
+    for(let i=1; i<=2; i++) {
+        const end = battle.skillCD[i];
+        const el = document.getElementById(`cd-${i}`);
+        if(now >= end) {
+            el.style.height = '0%';
+        } else {
+            const skill = SKILLS[i];
+            const cdr = battle.stats.cooldown;
+            const total = skill.cd * 1000 * (1 - cdr/100);
+            const remain = end - now;
+            const pct = (remain / total) * 100;
+            el.style.height = `${pct}%`;
+        }
+    }
+}
+
+// --- 5. 장비 제작 (중복 옵션 방지 로직) ---
 function craftGear() {
-    if(gameState.hammers < 10) return alert("망치가 부족합니다!");
-    gameState.hammers -= 10;
-    updateUI();
+    if(game.hammers < 10) return alert("망치 부족!");
+    game.hammers -= 10;
+    updateRes();
 
-    const part = PARTS[Math.floor(Math.random() * PARTS.length)];
-    // 모루 레벨에 따른 등급 산출
-    let maxG = Math.min(9, Math.floor(gameState.anvilLevel/3) + 2);
-    let minG = Math.max(0, Math.floor(gameState.anvilLevel/5) - 1);
-    let gradeIdx = Math.floor(Math.random() * (maxG - minG + 1)) + minG;
-    
-    const grade = GRADE_INFO[gradeIdx];
-    const lv = Math.max(1, (gameState.anvilLevel * 5) + Math.floor(Math.random()*10));
-    
-    let mainVal = lv * 10 * grade.rate;
-    let isRange = (part.id === 'weapon') && (Math.random() > 0.5);
+    // 부위 랜덤
+    const p = PARTS[Math.floor(Math.random() * PARTS.length)];
+    // 등급 (모루 레벨 영향)
+    const maxG = Math.min(9, Math.floor(game.anvilLevel/3) + 2);
+    const minG = Math.max(0, Math.floor(game.anvilLevel/5) - 1);
+    const gIdx = Math.floor(Math.random()*(maxG - minG + 1)) + minG;
+    const grade = GRADE_INFO[gIdx];
 
-    // [요청 반영] 보조 옵션 최대 2개
-    const subCnt = Math.floor(Math.random() * 2) + 1; 
+    const lv = Math.max(1, (game.anvilLevel * 5) + Math.floor(Math.random()*10));
+    const mainVal = Math.floor(lv * 10 * grade.mul);
+    
+    // 무기 원거리 여부
+    const isRange = (p.id === 'weapon' && Math.random() > 0.5);
+
+    // [중복 방지] 보조 옵션 뽑기
+    const subCount = Math.floor(Math.random()*3) + 1; // 1~3개
+    let availSubs = [...SUB_STATS_CONFIG]; // 복사본 생성
     let subs = [];
-    for(let i=0; i<subCnt; i++){
-        let s = SUB_STATS[Math.floor(Math.random()*SUB_STATS.length)];
-        let val = (Math.random() * 5 * grade.rate).toFixed(1);
-        subs.push({ ...s, val: parseFloat(val) });
+
+    for(let i=0; i<subCount; i++) {
+        if(availSubs.length === 0) break;
+        // 랜덤 인덱스 추출
+        const idx = Math.floor(Math.random() * availSubs.length);
+        const s = availSubs[idx];
+        
+        // 수치 계산: (1 ~ Max) * (등급보정/10 + 0.5) 대략적 밸런스
+        // 등급이 높으면 Max에 가까울 확률을 높이거나 한계 돌파?
+        // 여기선 단순하게 랜덤 * 등급보정하면 너무 커지니 Max값 안에서 랜덤하게 뜨되, 등급 높으면 잘 뜨게
+        const ratio = Math.random() * 0.5 + 0.5; // 50~100% 효율
+        let val = s.max * ratio; 
+        
+        // 소수점 정리
+        if(val < 1) val = 1;
+        val = parseFloat(val.toFixed(1));
+
+        subs.push({ ...s, val: val });
+
+        // 뽑힌 옵션은 배열에서 제거 (중복 방지 핵심)
+        availSubs.splice(idx, 1);
     }
 
     tempGear = {
-        id: part.id, name: part.name, type: part.type,
-        lv: lv, gradeIdx: gradeIdx, gradeName: grade.name, color: grade.color,
-        mainType: part.mainStat, mainVal: Math.floor(mainVal),
-        subs: subs, isRange: isRange
+        id: p.id, name: p.name, icon: p.icon, mainType: p.mainStat,
+        lv: lv, gradeIdx: gIdx, gName: grade.name, gClass: grade.class,
+        mainVal: mainVal, subs: subs, isRange: isRange
     };
 
     showCompare(tempGear);
     saveGame();
 }
 
-// --- UI 및 저장 ---
-function updateBars() {
-    const pHp = document.getElementById('hero-hp-fill');
-    const eHp = document.getElementById('enemy-hp-fill');
-    pHp.style.width = `${(battle.pHp / battle.pMaxHp)*100}%`;
-    eHp.style.width = `${(battle.eHp / battle.eMaxHp)*100}%`;
+// --- UI 및 유틸 ---
+function showDmg(val, isCrit, isDouble, isBlock) {
+    const layer = document.getElementById('damage-layer');
+    const el = document.createElement('div');
+    el.className = 'dmg-txt';
+    el.style.left = '60%'; el.style.top = '40%';
+    
+    if(isBlock) {
+        el.innerText = "BLOCK"; el.style.color = '#aaa';
+    } else {
+        el.innerText = isDouble ? `Double ${val}` : val;
+        el.style.color = isCrit ? '#ff4444' : 'white';
+        if(isDouble) el.style.color = '#ffd700';
+    }
+    layer.appendChild(el);
+    setTimeout(()=>el.remove(), 600);
 }
 
-function updateUI() {
-    document.getElementById('hammer-cnt').innerText = gameState.hammers;
-    document.getElementById('gold-cnt').innerText = gameState.gold;
-    document.getElementById('anvil-lv').innerText = gameState.anvilLevel;
-    document.getElementById('upgrade-cost').innerText = gameState.anvilLevel * 500;
+function updateHp() {
+    const p = (battle.pHp / battle.pMax) * 100;
+    const e = (battle.eHp / battle.eMax) * 100;
+    document.getElementById('hero-hp-fill').style.width = `${Math.max(0,p)}%`;
+    document.getElementById('enemy-hp-fill').style.width = `${Math.max(0,e)}%`;
+}
+
+function updateRes() {
+    document.getElementById('hammer-cnt').innerText = game.hammers;
+    document.getElementById('gold-cnt').innerText = game.gold;
+    document.getElementById('anvil-lv').innerText = game.anvilLevel;
+    document.getElementById('upgrade-cost').innerText = game.anvilLevel * 500;
 }
 
 function renderSlots() {
@@ -330,80 +367,66 @@ function renderSlots() {
     con.innerHTML = '';
     PARTS.forEach(p => {
         const d = document.createElement('div');
-        const gear = gameState.equipment[p.id];
+        const g = game.equipment[p.id];
         
-        let iconHtml = p.name;
-        if(p.id === 'weapon') iconHtml = '⚔️'; 
-        // CSS 아이콘 대신 문자로 간소화하거나, 이전 CSS 아이콘 유지 가능. 
-        // 여기선 등급 색상 강조를 위해 텍스트+색상 사용
-        
-        if(gear) {
-            d.className = `slot ${gear.color}`;
-            let wIcon = gear.isRange ? '🏹' : (p.id==='weapon'?'⚔️':'🛡️');
-            d.innerHTML = `
-                <div style="font-size:20px;">${wIcon}</div>
-                <div style="font-size:10px; font-weight:bold;">Lv.${gear.lv}</div>
-            `;
-            d.onclick = () => showDetail(gear);
+        if(g) {
+            d.className = `slot ${g.gClass}`;
+            let ico = g.icon;
+            if(p.id === 'weapon') ico = g.isRange ? '🏹' : '⚔️';
+            d.innerHTML = `<div class="slot-icon">${ico}</div><div>Lv.${g.lv}</div>`;
+            d.onclick = () => showDetail(g);
         } else {
             d.className = 'slot';
-            d.innerHTML = `<div style="font-size:10px; color:#777;">${p.name}</div>`;
+            d.innerHTML = `<div>${p.name}</div>`;
         }
         con.appendChild(d);
     });
 }
 
-function getGearHTML(g) {
-    if(!g) return '<div style="padding:10px; color:#777;">장비 없음</div>';
-    let typeTxt = g.isRange ? '(원거리)' : '';
-    return `
-        <div class="view-main" style="border:none; color:${getColor(g.gradeIdx)}">
-            [${g.gradeName}] ${g.name} ${typeTxt}
-        </div>
-        <div class="view-main">${g.mainType==='hp'?'체력':'공격력'} +${g.mainVal}</div>
-        <div style="color:#aaa;">
-            ${g.subs.map(s=>`<div>• ${s.name} +${s.val}%</div>`).join('')}
-        </div>
-        <div style="font-size:10px; color:#555; margin-top:5px;">Lv.${g.lv}</div>
+function getGearDesc(g) {
+    if(!g) return '<div style="color:#777; padding:10px;">없음</div>';
+    let type = g.isRange ? '(원거리)' : '';
+    let html = `
+        <div class="${g.gClass}" style="font-weight:bold; margin-bottom:5px;">[${g.gName}] ${g.name} ${type}</div>
+        <div class="stat-main">${g.mainType==='hp'?'체력':'피해'} +${g.mainVal}</div>
+        <div class="stat-sub">
     `;
+    g.subs.forEach(s => {
+        html += `<div>• ${s.name} +${s.val}% (Max ${s.max})</div>`;
+    });
+    html += `</div><div style="margin-top:5px; color:#555;">Lv.${g.lv}</div>`;
+    return html;
 }
-function getColor(idx) { return ['#fff','#87ceeb','#90ee90','#ffd700','#ff4444','#d64bd6','#00bfff','#aaaaff','#d2b48c','gold'][idx]; }
 
 function showCompare(newG) {
-    const curG = gameState.equipment[newG.id];
-    document.getElementById('current-gear-detail').innerHTML = getGearHTML(curG);
-    document.getElementById('new-gear-detail').innerHTML = getGearHTML(newG);
+    const curG = game.equipment[newG.id];
+    document.getElementById('current-gear-detail').innerHTML = getGearDesc(curG);
+    document.getElementById('new-gear-detail').innerHTML = getGearDesc(newG);
     document.getElementById('compare-modal').classList.remove('hidden');
 }
 function showDetail(g) {
-    document.getElementById('selected-gear-detail').innerHTML = getGearHTML(g);
+    document.getElementById('selected-gear-detail').innerHTML = getGearDesc(g);
     document.getElementById('detail-modal').classList.remove('hidden');
 }
 
-// 저장/로드
+// 저장
 function saveGame() {
-    if(!gameState.nick) return;
-    localStorage.setItem(`cssRpg_v2_${gameState.nick}`, JSON.stringify(gameState));
+    if(!game.nick) return;
+    localStorage.setItem(`v3_${game.nick}`, JSON.stringify(game));
 }
 function loadGame(nick) {
-    const data = localStorage.getItem(`cssRpg_v2_${nick}`);
-    if(data) {
-        gameState = JSON.parse(data);
-    } else {
-        gameState = {
-            nick: nick, gold: 0, hammers: 100, anvilLevel: 1, 
-            mainStage: 1, subStage: 1, equipment: {}
-        };
+    const d = localStorage.getItem(`v3_${nick}`);
+    if(d) game = JSON.parse(d);
+    else {
+        game.nick = nick; game.gold=0; game.hammers=100; game.equipment={};
+        game.stageMain=1; game.stageSub=1;
     }
-    // 화면 전환
     document.getElementById('start-screen').classList.add('hidden');
     document.getElementById('game-app').classList.remove('hidden');
     
-    calcStats();
-    renderSlots();
-    updateUI();
-    spawnEnemy(); // 게임 루프 시작
-    requestAnimationFrame(gameLoop);
+    calcStats(); renderSlots(); updateRes();
+    spawnEnemy();
+    gameLoop();
     setInterval(saveGame, 5000);
 }
 
@@ -414,28 +437,22 @@ document.getElementById('start-game-btn').onclick = () => {
 };
 document.getElementById('summon-btn').onclick = craftGear;
 document.getElementById('keep-btn').onclick = () => {
-    gameState.gold += 50;
+    game.gold += 50; updateRes();
     document.getElementById('compare-modal').classList.add('hidden');
-    updateUI();
 };
 document.getElementById('equip-btn').onclick = () => {
-    gameState.equipment[tempGear.id] = tempGear;
+    game.equipment[tempGear.id] = tempGear;
     calcStats(); renderSlots();
     document.getElementById('compare-modal').classList.add('hidden');
     saveGame();
 };
 document.getElementById('close-detail-btn').onclick = () => document.getElementById('detail-modal').classList.add('hidden');
 document.getElementById('upgrade-btn').onclick = () => {
-    const cost = gameState.anvilLevel * 500;
-    if(gameState.gold >= cost) {
-        gameState.gold -= cost;
-        gameState.anvilLevel++;
-        updateUI(); saveGame();
+    let cost = game.anvilLevel * 500;
+    if(game.gold >= cost) {
+        game.gold -= cost; game.anvilLevel++; updateRes(); saveGame();
     }
 };
 document.getElementById('reset-data-btn').onclick = () => {
-    if(confirm('초기화 하시겠습니까?')) {
-        localStorage.removeItem(`cssRpg_v2_${gameState.nick}`);
-        location.reload();
-    }
+    if(confirm("초기화?")) { localStorage.removeItem(`v3_${game.nick}`); location.reload(); }
 };
