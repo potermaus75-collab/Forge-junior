@@ -3,116 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Anvil RPG Mobile</title>
+    <title>Neo God Wars</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="start-screen" class="full-overlay">
-        <div class="login-box">
-            <h1>⚔️ 영웅의 대장간</h1>
-            <p>384x698 Optimized</p>
-            <input type="text" id="nickname-input" placeholder="닉네임 입력">
-            <button id="start-game-btn" class="main-btn">모험 시작</button>
-        </div>
-    </div>
 
-    <div id="game-app" class="game-container hidden">
-        <header class="top-bar">
-            <div class="currency-group">
-                <div class="res-item">🔨 <span id="hammer-cnt">0</span></div>
-                <div class="res-item">💰 <span id="gold-cnt">0</span></div>
+    <div id="game-container">
+        
+        <header id="top-header">
+            <div class="user-profile">
+                <div class="avatar" id="user-avatar">
+                    <i class="fa-solid fa-user-astronaut"></i>
+                </div>
+                <div class="user-info">
+                    <div class="name-box">
+                        <span id="user-name">플레이어</span>
+                        <span id="user-title" class="title-badge">[신입]</span>
+                    </div>
+                    <div class="level-box">
+                        Lv.<span id="user-level">1</span> 
+                        <span class="exp-text">(<span id="user-exp">0</span>%)</span>
+                    </div>
+                </div>
             </div>
-            <div class="stage-badge">STAGE <span id="stage-num">1-1</span></div>
-            <button id="reset-data-btn" class="mini-btn">⚙️</button>
+            
+            <div class="resource-container">
+                <div class="res-item gold">
+                    <i class="fa-solid fa-coins"></i> <span id="res-gold">0</span>
+                </div>
+                <div class="res-item gem">
+                    <i class="fa-solid fa-gem"></i> <span id="res-gem">0</span>
+                </div>
+            </div>
         </header>
 
-        <section class="battle-stage">
-            <div class="battle-field">
-                <div id="hero-wrapper" class="unit-wrapper hero-pos">
-                    <div class="hp-bar-box"><div class="hp-fill" id="hero-hp-fill"></div></div>
-                    <div id="hero-art" class="hq-hero">
-                        <div class="cape"></div>
-                        <div class="body"></div>
-                        <div class="head">
-                            <div class="helmet-visor"></div>
-                        </div>
-                        <div class="arm left"></div>
-                        <div class="arm right">
-                            <div id="hero-weapon" class="weapon sword"></div>
-                        </div>
-                        <div class="leg left"></div>
-                        <div class="leg right"></div>
-                    </div>
+        <section id="status-bars">
+            <div class="bar-group">
+                <div class="bar-label"><i class="fa-solid fa-heart"></i> HP</div>
+                <div class="progress-bg">
+                    <div id="bar-hp" class="progress-fill hp" style="width: 100%;"></div>
+                    <span class="bar-text"><span id="val-hp">100</span>/<span id="max-hp">100</span></span>
                 </div>
-
-                <div id="damage-layer"></div>
-
-                <div id="enemy-wrapper" class="unit-wrapper enemy-pos">
-                    <div class="hp-bar-box"><div class="hp-fill" id="enemy-hp-fill"></div></div>
-                    <div id="enemy-art" class="hq-monster slime">
-                        <div class="mon-core"></div>
-                        <div class="mon-eye left"></div>
-                        <div class="mon-eye right"></div>
-                        <div class="mon-mouth"></div>
-                        <div id="boss-badge" class="hidden">BOSS</div>
-                    </div>
+                <button id="btn-heal" class="btn-mini"><i class="fa-solid fa-plus"></i></button>
+            </div>
+            
+            <div class="bar-group">
+                <div class="bar-label"><i class="fa-solid fa-bolt"></i> ENG</div>
+                <div class="progress-bg">
+                    <div id="bar-energy" class="progress-fill energy" style="width: 100%;"></div>
+                    <span class="bar-text"><span id="val-energy">50</span>/<span id="max-energy">50</span></span>
                 </div>
+                <span id="timer-energy" class="timer-text">00:00</span>
+            </div>
+
+            <div class="bar-group">
+                <div class="bar-label"><i class="fa-solid fa-fist-raised"></i> STM</div>
+                <div class="progress-bg">
+                    <div id="bar-stamina" class="progress-fill stamina" style="width: 100%;"></div>
+                    <span class="bar-text"><span id="val-stamina">10</span>/<span id="max-stamina">10</span></span>
+                </div>
+                <span id="timer-stamina" class="timer-text">00:00</span>
             </div>
         </section>
 
-        <section class="skill-bar">
-            <div class="skill-slot" id="skill-1" onclick="useSkill(1)">
-                <div class="skill-icon">⚡</div>
-                <div class="skill-cooldown" id="cd-1"></div>
+        <main id="main-content">
+            <div class="loading-spinner">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> 데이터 로딩 중...
             </div>
-            <div class="skill-slot" id="skill-2" onclick="useSkill(2)">
-                <div class="skill-icon">❤️</div>
-                <div class="skill-cooldown" id="cd-2"></div>
-            </div>
-            <div class="skill-info-text">스킬 (쿨타임 감소 적용)</div>
-        </section>
+        </main>
 
-        <section class="equipment-grid">
-            <div id="equip-slots" class="slots-container"></div>
-        </section>
-
-        <section class="controls">
-            <div class="anvil-status">
-                <div class="lv-txt">Lv.<span id="anvil-lv">1</span></div>
-                <button id="upgrade-btn" class="up-btn">강화 (💰<span id="upgrade-cost">100</span>)</button>
-            </div>
-            <button id="summon-btn" class="summon-btn">
-                <div class="hammer-ani">🔨</div>
-                <div>제작 (🔨10)</div>
+        <nav id="bottom-nav">
+            <button class="nav-btn active" data-tab="home">
+                <i class="fa-solid fa-house"></i>
+                <span>마이홈</span>
             </button>
-        </section>
+            <button class="nav-btn" data-tab="quest">
+                <i class="fa-solid fa-scroll"></i>
+                <span>임무</span>
+            </button>
+            <button class="nav-btn" data-tab="battle">
+                <i class="fa-solid fa-dungeon"></i>
+                <span>배틀</span>
+            </button>
+            <button class="nav-btn" data-tab="unit">
+                <i class="fa-solid fa-chess-knight"></i>
+                <span>부대</span>
+            </button>
+            <button class="nav-btn" data-tab="shop">
+                <i class="fa-solid fa-shop"></i>
+                <span>상점</span>
+            </button>
+        </nav>
+
     </div>
 
-    <div id="compare-modal" class="modal hidden">
-        <div class="modal-content">
-            <h3 class="modal-header">장비 제작 완료!</h3>
-            <div class="compare-box">
-                <div class="card bg-old">
-                    <div class="card-label">현재 장비</div>
-                    <div id="current-gear-detail" class="gear-desc"></div>
-                    <button id="keep-btn" class="btn-sell">판매 (+💰50)</button>
+    <div id="modal-overlay" class="hidden">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="modal-title">알림</h3>
+                <button id="modal-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" id="modal-content">
                 </div>
-                <div class="card bg-new">
-                    <div class="card-label">새 장비</div>
-                    <div id="new-gear-detail" class="gear-desc"></div>
-                    <button id="equip-btn" class="btn-equip">장착</button>
-                </div>
+            <div class="modal-footer">
+                <button id="modal-action-btn" class="btn-primary">확인</button>
             </div>
         </div>
     </div>
 
-    <div id="detail-modal" class="modal hidden">
-        <div class="modal-content small-modal">
-            <div id="selected-gear-detail" class="gear-desc full-desc"></div>
-            <button id="close-detail-btn" class="btn-close">닫기</button>
-        </div>
-    </div>
+    <div id="toast-container"></div>
 
-    <script src="script.js"></script>
+    <script src="constants.js"></script>
+    <script src="data_items.js"></script>
+    <script src="data_gods.js"></script>
+    <script src="data_quests.js"></script>
+    <script src="data_bosses.js"></script>
+    <script src="data_buildings.js"></script>
+    <script src="data_recipes.js"></script>
+    
+    <script src="game.js"></script>
 </body>
 </html>
