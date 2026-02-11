@@ -1,219 +1,596 @@
-
+/* =========================================
+   1. 기본 설정 및 변수 (Variables & Reset)
+   ========================================= */
 :root {
-    --bg-dark: #1a1a1d;
-    --panel-gray: #2b2b2b;
-    --accent-gold: #ffd700;
-    --accent-blue: #2196f3;
-    --danger: #ff4444;
+    /* 색상 팔레트 */
+    --bg-color: #121212;         /* 메인 배경 (아주 어두운 회색) */
+    --card-bg: #1e1e1e;          /* 카드 배경 */
+    --text-main: #e0e0e0;        /* 기본 텍스트 */
+    --text-sub: #aaaaaa;         /* 보조 텍스트 */
+    
+    --color-gold: #FFD700;       /* 포인트 컬러: 골드 */
+    --color-gold-dark: #B8860B;  /* 어두운 골드 */
+    --color-red: #ff5252;        /* HP, 경고 */
+    --color-green: #69f0ae;      /* 에너지, 회복 */
+    --color-blue: #448aff;       /* 스태미나, 정보 */
+    --color-exp: #ffd600;        /* 경험치 */
+
+    /* 등급별 색상 (Rarity) */
+    --rank-c: #b0b0b0;           /* Common (회색) */
+    --rank-uc: #4caf50;          /* Uncommon (초록) */
+    --rank-r: #2196f3;           /* Rare (파랑) */
+    --rank-e: #9c27b0;           /* Epic (보라) */
+    --rank-l: #ff9800;           /* Legend (주황) */
+    --rank-g: #ffeb3b;           /* God (금색 + 발광) */
+
+    /* 레이아웃 사이즈 */
+    --header-height: 160px;      /* 상단 헤더+스탯바 높이 */
+    --nav-height: 60px;          /* 하단 탭 높이 */
+    --max-width: 480px;          /* PC에서 모바일 뷰 최대 폭 */
 }
 
-* { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent; /* 모바일 터치 하이라이트 제거 */
+}
 
 body {
-    margin: 0; padding: 0;
+    font-family: 'Noto Sans KR', sans-serif;
     background-color: #000;
-    font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-    display: flex; justify-content: center; align-items: center;
-    height: 100vh; overflow: hidden;
+    color: var(--text-main);
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    overflow-x: hidden;
 }
 
-/* --- 메인 컨테이너 (384x698 고정) --- */
-.game-container {
-    width: 384px; height: 698px;
-    background-color: var(--panel-gray);
+/* 스크롤바 커스텀 */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #111; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+/* =========================================
+   2. 메인 컨테이너 (Mobile Layout)
+   ========================================= */
+#game-container {
+    width: 100%;
+    max-width: var(--max-width);
+    background-color: var(--bg-color);
     position: relative;
-    display: flex; flex-direction: column;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.1); /* PC에서 금색 후광 */
+    border-left: 1px solid #333;
+    border-right: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* =========================================
+   3. 상단 헤더 (Header)
+   ========================================= */
+#top-header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    max-width: var(--max-width);
+    height: 70px;
+    background: linear-gradient(180deg, #222 0%, #1a1a1a 100%);
+    border-bottom: 2px solid var(--color-gold-dark);
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
+}
+
+/* 유저 프로필 */
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.avatar {
+    width: 45px;
+    height: 45px;
+    background-color: #333;
+    border: 2px solid var(--color-gold);
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    color: var(--color-gold);
+    overflow: hidden;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.name-box {
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.title-badge {
+    font-size: 10px;
+    background: #333;
+    color: var(--color-gold);
+    padding: 1px 4px;
+    border-radius: 4px;
+    margin-left: 4px;
+    border: 1px solid var(--color-gold-dark);
+}
+
+.level-box {
+    font-size: 12px;
+    color: var(--text-sub);
+}
+
+.exp-text {
+    font-size: 10px;
+    color: var(--color-exp);
+}
+
+/* 재화 (골드/젬) */
+.resource-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.res-item {
+    font-size: 13px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.res-item.gold { color: var(--color-gold); }
+.res-item.gem { color: #00e5ff; }
+
+/* =========================================
+   4. 상태바 (Status Bars) - HP/Eng/Stm
+   ========================================= */
+#status-bars {
+    position: fixed;
+    top: 70px; /* 헤더 높이만큼 아래로 */
+    width: 100%;
+    max-width: var(--max-width);
+    height: 90px;
+    background-color: #151515;
+    z-index: 99;
+    padding: 5px 15px;
+    border-bottom: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+}
+
+.bar-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+}
+
+.bar-label {
+    width: 40px;
+    color: #ccc;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.progress-bg {
+    flex-grow: 1;
+    height: 14px;
+    background-color: #333;
+    border-radius: 7px;
+    position: relative;
+    overflow: hidden;
     border: 1px solid #444;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
-    overflow: hidden; /* 내부 스크롤만 허용 */
 }
-.full-overlay {
-    position: absolute; width: 384px; height: 698px;
-    background: #111; z-index: 999;
-    display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;
+
+.progress-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+    /* 빗살무늬 패턴 */
+    background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+    background-size: 1rem 1rem;
 }
-.login-box input { padding: 10px; border-radius: 5px; border: none; text-align: center; margin-bottom: 10px; }
+
+.progress-fill.hp { background-color: var(--color-red); }
+.progress-fill.energy { background-color: var(--color-green); }
+.progress-fill.stamina { background-color: var(--color-blue); }
+
+.bar-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 9px;
+    color: #fff;
+    text-shadow: 1px 1px 1px #000;
+    white-space: nowrap;
+}
+
+.btn-mini {
+    background: #333;
+    border: 1px solid #555;
+    color: var(--color-green);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px;
+    cursor: pointer;
+}
+
+.timer-text {
+    width: 35px;
+    text-align: right;
+    font-size: 10px;
+    color: #888;
+}
+
+/* =========================================
+   5. 메인 콘텐츠 (Main Content)
+   ========================================= */
+#main-content {
+    margin-top: var(--header-height); /* 160px */
+    margin-bottom: var(--nav-height); /* 60px */
+    padding: 15px;
+    flex-grow: 1;
+    overflow-y: auto;
+    /* 스크롤 부드럽게 */
+    scroll-behavior: smooth;
+}
+
+/* 로딩 스피너 */
+.loading-spinner {
+    text-align: center;
+    padding: 50px;
+    color: var(--color-gold);
+    font-size: 18px;
+}
+
+/* =========================================
+   6. 카드 스타일 (Cards & List Items)
+   ========================================= */
+/* 공통 카드 스타일 */
+.card-item {
+    background-color: var(--card-bg);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: transform 0.1s, border-color 0.2s;
+}
+
+.card-item:active {
+    transform: scale(0.98);
+}
+
+.card-item:hover {
+    border-color: #555;
+}
+
+/* 썸네일 이미지 박스 */
+.card-thumb {
+    width: 60px;
+    height: 60px;
+    background-color: #000;
+    border-radius: 6px;
+    border: 1px solid #444;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    color: #666;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+/* 썸네일 안의 등급 테두리 */
+.card-thumb.rank-c { border-color: var(--rank-c); color: var(--rank-c); }
+.card-thumb.rank-uc { border-color: var(--rank-uc); color: var(--rank-uc); }
+.card-thumb.rank-r { border-color: var(--rank-r); color: var(--rank-r); box-shadow: 0 0 5px var(--rank-r); }
+.card-thumb.rank-e { border-color: var(--rank-e); color: var(--rank-e); box-shadow: 0 0 8px var(--rank-e); }
+.card-thumb.rank-l { border-color: var(--rank-l); color: var(--rank-l); box-shadow: 0 0 10px var(--rank-l); }
+.card-thumb.rank-g { border-color: var(--rank-g); color: var(--rank-g); box-shadow: 0 0 15px var(--rank-g); }
+
+/* 카드 내용 텍스트 */
+.card-info {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+}
+
+.card-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.card-desc {
+    font-size: 11px;
+    color: #999;
+    line-height: 1.3;
+}
+
+.card-meta {
+    font-size: 11px;
+    color: var(--color-gold);
+    display: flex;
+    gap: 8px;
+}
+
+/* 카드 우측 버튼 영역 */
+.card-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-action {
+    background: linear-gradient(180deg, #444 0%, #222 100%);
+    border: 1px solid #555;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    min-width: 60px;
+    text-align: center;
+}
+
+.btn-action.primary {
+    background: linear-gradient(180deg, #d4af37 0%, #aa8c2c 100%);
+    border: 1px solid #FFD700;
+    color: #000;
+    font-weight: bold;
+}
+
+.btn-action.disabled {
+    background: #222;
+    border: 1px solid #333;
+    color: #555;
+    cursor: not-allowed;
+}
+
+/* 임무(Quest) 진행바 */
+.quest-progress-bg {
+    width: 100%;
+    height: 4px;
+    background: #333;
+    margin-top: 4px;
+    border-radius: 2px;
+}
+.quest-progress-fill {
+    height: 100%;
+    background: var(--color-gold);
+    border-radius: 2px;
+    transition: width 0.3s;
+}
+
+/* =========================================
+   7. 하단 내비게이션 (Bottom Nav)
+   ========================================= */
+#bottom-nav {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    max-width: var(--max-width);
+    height: var(--nav-height);
+    background-color: #0a0a0a;
+    border-top: 1px solid #333;
+    display: flex;
+    z-index: 100;
+}
+
+.nav-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: #666;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    gap: 5px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.nav-btn i {
+    font-size: 18px;
+}
+
+.nav-btn.active {
+    color: var(--color-gold);
+    background: rgba(255, 215, 0, 0.05);
+    border-top: 2px solid var(--color-gold);
+}
+
+/* =========================================
+   8. 모달 & 팝업 (Modal)
+   ========================================= */
 .hidden { display: none !important; }
 
-/* 1. 상단바 */
-.top-bar {
-    height: 50px; background: #222; border-bottom: 1px solid #444;
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 0 15px; flex-shrink: 0; color: white;
+#modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
 }
-.res-item { font-size: 13px; font-weight: bold; margin-right: 8px; }
-.stage-badge { color: var(--accent-gold); font-weight: bold; font-size: 16px; }
-.mini-btn { background: none; border: none; font-size: 18px; cursor: pointer; }
 
-/* 2. 전투 스테이지 */
-.battle-stage {
-    height: 240px; background: #181818;
-    position: relative; flex-shrink: 0;
-    overflow: hidden;
+.modal-box {
+    width: 100%;
+    max-width: 320px;
+    background-color: #1e1e1e;
+    border: 2px solid var(--color-gold-dark);
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.8);
+    animation: popUp 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes popUp {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.modal-header {
+    padding: 15px;
     border-bottom: 1px solid #333;
-}
-.battle-field { width: 100%; height: 100%; position: relative; }
-
-/* 유닛 공통 */
-.unit-wrapper {
-    position: absolute; bottom: 30px;
-    display: flex; flex-direction: column; align-items: center;
-    transition: transform 1.5s linear;
-}
-.hero-pos { left: -80px; } /* 시작 위치 */
-.enemy-pos { right: -80px; }
-
-/* 워킹 애니메이션 클래스 */
-.hero-walk-melee { transform: translateX(160px); }
-.hero-walk-range { transform: translateX(100px); }
-.enemy-walk { transform: translateX(-160px); }
-
-/* HP Bar */
-.hp-bar-box { width: 50px; height: 6px; background: #000; border: 1px solid #555; margin-bottom: 5px; border-radius: 3px; }
-.hp-fill { height: 100%; width: 100%; transition: width 0.2s; }
-#hero-hp-fill { background: #4caf50; }
-#enemy-hp-fill { background: #ff4444; }
-
-/* --- CSS ART: Hero (고퀄리티) --- */
-.hq-hero { position: relative; width: 64px; height: 64px; }
-.hq-hero .cape { 
-    position: absolute; top: 10px; left: -5px; width: 40px; height: 50px; 
-    background: #d32f2f; border-radius: 5px; transform: rotate(5deg); z-index: 0; 
-}
-.hq-hero .head { 
-    position: absolute; top: 0; left: 18px; width: 28px; height: 28px; 
-    background: linear-gradient(135deg, #eee, #999); border-radius: 6px; z-index: 2;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
-}
-.hq-hero .helmet-visor { 
-    position: absolute; top: 8px; left: 4px; width: 20px; height: 4px; background: #333; 
-}
-.hq-hero .body {
-    position: absolute; top: 26px; left: 16px; width: 32px; height: 26px;
-    background: linear-gradient(to bottom, #1565c0, #0d47a1); border-radius: 4px; z-index: 1;
-}
-.hq-hero .arm { position: absolute; width: 8px; height: 20px; background: #999; top: 28px; border-radius: 4px; z-index: 2; }
-.hq-hero .arm.left { left: 10px; }
-.hq-hero .arm.right { right: 10px; }
-.hq-hero .leg { position: absolute; width: 10px; height: 18px; background: #333; top: 48px; z-index: 1; }
-.hq-hero .leg.left { left: 18px; }
-.hq-hero .leg.right { left: 36px; }
-
-/* 무기 */
-.weapon { position: absolute; top: 10px; left: 0; transform-origin: 50% 100%; }
-.weapon.sword { 
-    width: 8px; height: 35px; background: linear-gradient(to right, #ddd, #fff, #ddd); 
-    border-radius: 2px 2px 0 0; box-shadow: 0 0 5px rgba(255,255,255,0.5);
-    top: -10px; left: 2px;
-}
-.weapon.bow {
-    width: 30px; height: 40px; border-left: 3px solid #8d6e63; border-radius: 50% 0 0 50%;
-    top: -5px; left: -5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #252525;
+    border-radius: 8px 8px 0 0;
 }
 
-/* --- CSS ART: Monster (고퀄리티) --- */
-.hq-monster { position: relative; width: 70px; height: 70px; transition: transform 0.1s; }
-.hq-monster .mon-core {
-    position: absolute; bottom: 0; left: 5px; width: 60px; height: 50px;
-    background: radial-gradient(circle at 30% 30%, #a5d6a7, #4caf50);
-    border-radius: 50% 50% 10% 10%;
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.4);
-}
-.hq-monster.boss .mon-core {
-    width: 80px; height: 70px; left: -5px;
-    background: radial-gradient(circle at 30% 30%, #ff8a80, #d32f2f);
-    border-radius: 40% 40% 15% 15%;
-    box-shadow: 0 0 15px rgba(211, 47, 47, 0.6);
-}
-.mon-eye {
-    position: absolute; width: 12px; height: 12px; background: white; border-radius: 50%;
-    bottom: 30px; z-index: 5; animation: blink 3s infinite;
-}
-.mon-eye::after { content:''; position:absolute; top:3px; left:3px; width:6px; height:6px; background:black; border-radius:50%; }
-.mon-eye.left { left: 15px; } .mon-eye.right { left: 40px; }
-.hq-monster.boss .mon-eye { bottom: 45px; }
+.modal-header h3 { color: var(--color-gold); font-size: 16px; }
+#modal-close { background: none; border: none; color: #888; font-size: 18px; cursor: pointer; }
 
-/* 애니메이션 */
-@keyframes atk-melee { 0% {transform: rotate(0deg);} 50% {transform: rotate(60deg);} 100% {transform: rotate(0deg);} }
-@keyframes atk-shoot { 0% {transform: translateX(0);} 50% {transform: translateX(-5px);} 100% {transform: translateX(0);} }
-@keyframes hit-shake { 0%,100% {transform:translateX(0);} 25% {transform:translateX(-5px) scale(0.9);} 75% {transform:translateX(5px) scale(0.9);} }
-@keyframes blink { 0%,90%,100% {transform: scaleY(1);} 95% {transform: scaleY(0.1);} }
-
-.anim-swing { animation: atk-melee 0.2s; }
-.anim-shoot { animation: atk-shoot 0.2s; }
-.anim-hit { animation: hit-shake 0.3s; filter: brightness(2); }
-
-/* 3. 스킬 바 */
-.skill-bar {
-    height: 60px; background: #222; border-bottom: 1px solid #444; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center; gap: 15px;
+.modal-body {
+    padding: 20px;
+    min-height: 100px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #ddd;
+    text-align: center;
 }
-.skill-slot {
-    width: 45px; height: 45px; background: #333; border: 2px solid #555; border-radius: 8px;
-    display: flex; justify-content: center; align-items: center; cursor: pointer; position: relative;
-    font-size: 20px; overflow: hidden;
-}
-.skill-slot:active { transform: scale(0.95); }
-.skill-cooldown {
-    position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; 
-    background: rgba(0,0,0,0.7); transition: height 0.1s linear;
-}
-.skill-info-text { font-size: 10px; color: #888; position: absolute; right: 10px; bottom: 5px;}
 
-/* 4. 장비 그리드 (유동적 높이) */
-.equipment-grid {
-    flex: 1; /* 남은 공간 차지 */
-    background: #1a1a1d; padding: 10px;
-    overflow-y: auto; /* 내부 스크롤 */
+.modal-footer {
+    padding: 15px;
+    border-top: 1px solid #333;
+    text-align: center;
 }
-.slots-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding-bottom: 10px; }
-.slot {
-    aspect-ratio: 1; background: #2a2a2d; border: 1px solid #444; border-radius: 6px;
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
-    position: relative; font-size: 10px; color: #aaa;
+
+.btn-primary {
+    background-color: var(--color-gold);
+    color: #000;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
 }
-.slot-icon { font-size: 18px; margin-bottom: 2px; }
 
-/* 5. 컨트롤 (하단 고정) */
-.controls {
-    height: 110px; flex-shrink: 0; background: #222; border-top: 1px solid #444;
-    padding: 10px 15px; display: flex; flex-direction: column; justify-content: space-between;
+/* =========================================
+   9. 토스트 메시지 (Toast)
+   ========================================= */
+#toast-container {
+    position: fixed;
+    bottom: 80px; /* nav 위 */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 400px;
+    z-index: 999;
+    pointer-events: none; /* 클릭 통과 */
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
 }
-.anvil-status { display: flex; justify-content: space-between; align-items: center; color: white; margin-bottom: 5px; }
-.lv-txt { font-size: 16px; font-weight: bold; }
-.up-btn { background: #555; border: none; padding: 6px 12px; color: white; border-radius: 4px; font-size: 12px; cursor: pointer; }
-.summon-btn {
-    width: 100%; height: 50px; background: var(--accent-blue); color: white; border: none; border-radius: 8px;
-    font-size: 18px; font-weight: bold; display: flex; justify-content: center; align-items: center; gap: 10px;
-    cursor: pointer; box-shadow: 0 4px 0 #1976d2; transition: all 0.1s;
+
+.toast-msg {
+    background-color: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    border: 1px solid #444;
+    animation: fadeInOut 2.5s forwards;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
-.summon-btn:active { box-shadow: 0 0 0; transform: translateY(4px); }
 
-/* 모달 */
-.modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; justify-content: center; align-items: center; }
-.modal-content { background: #2b2b2b; width: 90%; padding: 15px; border-radius: 10px; color: white; border: 1px solid #555; }
-.compare-box { display: flex; gap: 8px; margin-top: 10px; }
-.card { flex: 1; padding: 8px; border-radius: 6px; background: #222; border: 1px solid #444; }
-.card-label { font-size: 11px; color: #888; text-align: center; margin-bottom: 5px; }
-.gear-desc { font-size: 11px; line-height: 1.4; min-height: 100px; }
-.stat-main { font-size: 15px; color: var(--accent-gold); font-weight: bold; border-bottom: 1px solid #444; margin-bottom: 4px; padding-bottom: 2px; }
-.stat-sub { color: #ccc; font-size: 10px; }
-.btn-sell { width: 100%; background: #ef5350; border: none; padding: 8px; color: white; border-radius: 4px; margin-top: 5px; cursor: pointer; }
-.btn-equip { width: 100%; background: #4caf50; border: none; padding: 8px; color: white; border-radius: 4px; margin-top: 5px; cursor: pointer; }
-.btn-close { width: 100%; padding: 10px; background: #555; border: none; color: white; margin-top: 10px; border-radius: 5px; }
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(20px); }
+    10% { opacity: 1; transform: translateY(0); }
+    80% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-20px); }
+}
 
-/* 등급 컬러 */
-.g-0 { border: 1px solid #777; color: #ccc; }
-.g-1 { border: 1px solid #87ceeb; color: #87ceeb; }
-.g-2 { border: 1px solid #90ee90; color: #90ee90; }
-.g-3 { border: 1px solid #ffd700; color: #ffd700; }
-.g-4 { border: 1px solid #ff4444; color: #ff4444; }
-.g-5 { border: 1px solid #d64bd6; color: #d64bd6; }
-.g-6 { border: 1px solid #00bfff; color: #00bfff; background: rgba(0,100,255,0.1); } /* 바다색 */
-.g-7 { border: 1px solid #aaaaff; color: #aaaaff; }
-.g-8 { border: 1px solid #d2b48c; color: #d2b48c; }
-.g-9 { border: 2px solid gold; background: linear-gradient(135deg, #330, #550); color: gold; }
+/* =========================================
+   10. 섹션별 스타일 (Tabs)
+   ========================================= */
+/* 섹션 타이틀 */
+.section-title {
+    font-size: 18px;
+    color: var(--color-gold);
+    margin-bottom: 15px;
+    border-left: 4px solid var(--color-gold);
+    padding-left: 10px;
+}
 
-/* 데미지 텍스트 */
-.dmg-txt { position: absolute; font-weight: bold; font-size: 18px; text-shadow: 1px 1px 0 #000; animation: floatUp 0.6s forwards; z-index: 10; pointer-events: none;}
-@keyframes floatUp { from{opacity:1; transform:translateY(0);} to{opacity:0; transform:translateY(-30px);} }
+/* 스탯 그리드 (마이홈) */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.stat-box {
+    background: #222;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* 챕터 배너 (임무) */
+.chapter-header {
+    width: 100%;
+    height: 100px; /* 이미지 들어가면 조정 */
+    background: #333;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #888;
+    border: 1px solid #444;
+    position: relative;
+    overflow: hidden;
+}
+.chapter-header h2 {
+    z-index: 1;
+    color: #fff;
+    text-shadow: 0 2px 4px #000;
+}
