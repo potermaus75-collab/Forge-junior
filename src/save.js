@@ -1,8 +1,21 @@
 (function () {
-  const KEY = 'neoGodWars_save';
+  const KEY_PREFIX = 'neoGodWars_save';
+  const KEY_LAST = 'neoGodWars_lastProfile';
   let saveTimer = null;
+  let currentProfileName = null;
 
   function sanitizeNum(n, d = 0) { return Number.isFinite(n) ? n : d; }
+  function normalizeName(name) { return String(name || '').trim(); }
+  function saveKey(name) { return `${KEY_PREFIX}_${normalizeName(name) || 'guest'}`; }
+
+  function setProfile(name) {
+    currentProfileName = normalizeName(name) || 'guest';
+    localStorage.setItem(KEY_LAST, currentProfileName);
+  }
+
+  function getCurrentProfile() {
+    return currentProfileName || localStorage.getItem(KEY_LAST) || null;
+  }
 
   function migrateSave(raw) {
     let save = raw || {};
@@ -50,6 +63,7 @@
     out.inventory = out.inventory || {};
     out.buildings = out.buildings || {};
     out.deck = Array.isArray(out.deck) ? out.deck.filter((id) => DataAdapter.godMap.has(id)) : [];
+    out.timers = { ...d.timers, ...(out.timers || {}) };
 
     ['gold', 'gem'].forEach((k) => out.resources[k] = Math.max(0, sanitizeNum(out.resources[k], d.resources[k])));
     ['hp', 'hpMax', 'energy', 'energyMax', 'stamina', 'staminaMax'].forEach((k) => out.stats[k] = Math.max(0, sanitizeNum(out.stats[k], d.stats[k])));
@@ -71,7 +85,9 @@
   function saveNow() {
     const p = GameState.get();
     p.timers.lastSave = Date.now();
-    localStorage.setItem(KEY, JSON.stringify(p));
+    const name = getCurrentProfile() || p.profile.name || 'guest';
+    setProfile(name);
+    localStorage.setItem(saveKey(name), JSON.stringify(p));
   }
 
   function scheduleSave() {
@@ -79,9 +95,12 @@
     saveTimer = setTimeout(saveNow, 600);
   }
 
-  function load() {
+  function loadByName(name) {
     try {
-      const raw = localStorage.getItem(KEY);
+      const normalized = normalizeName(name);
+      if (!normalized) return false;
+      setProfile(normalized);
+      const raw = localStorage.getItem(saveKey(normalized));
       if (!raw) return false;
       const migrated = migrateSave(JSON.parse(raw));
       GameState.set(validate(migrated));
@@ -91,5 +110,21 @@
     }
   }
 
-  window.SaveSystem = { load, saveNow, scheduleSave, validate, migrateSave };
+  function load() {
+    const last = localStorage.getItem(KEY_LAST);
+    if (!last) return false;
+    return loadByName(last);
+  }
+
+  window.SaveSystem = {
+    load,
+    loadByName,
+    saveNow,
+    scheduleSave,
+    validate,
+    migrateSave,
+    setProfile,
+    getCurrentProfile,
+    normalizeName,
+  };
 })();

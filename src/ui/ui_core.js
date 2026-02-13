@@ -31,6 +31,11 @@
       document.getElementById(`val-${k}`).innerText = Math.floor(cur);
       document.getElementById(`max-${k}`).innerText = Math.floor(max);
     });
+
+    const eLeft = Math.max(0, 30 - Math.floor((p.timers.energyRegenAcc || 0) % 30));
+    const sLeft = Math.max(0, 45 - Math.floor((p.timers.staminaRegenAcc || 0) % 45));
+    document.getElementById('timer-energy').innerText = p.stats.energy >= p.stats.energyMax ? 'MAX' : `00:${String(eLeft).padStart(2, '0')}`;
+    document.getElementById('timer-stamina').innerText = p.stats.stamina >= p.stats.staminaMax ? 'MAX' : `00:${String(sLeft).padStart(2, '0')}`;
   }
 
   function renderTab() {
@@ -85,40 +90,89 @@
     if (activeTab === 'battle') UITabs.updateBattleTimer();
   }
 
-  function init() {
-    SaveSystem.load();
+  function startWithName(name) {
+    const normalized = SaveSystem.normalizeName(name);
+    if (!normalized) return false;
+
+    const loaded = SaveSystem.loadByName(normalized);
     const p = GameState.get();
-    if (!p.deck.length) p.deck = ['g_gr_c1'];
+    if (!loaded) {
+      const fresh = GameState.cloneDefault();
+      fresh.profile.name = normalized;
+      GameState.set(fresh);
+      SaveSystem.setProfile(normalized);
+      SaveSystem.saveNow();
+    } else if (p.profile.name !== normalized) {
+      p.profile.name = normalized;
+      SaveSystem.saveNow();
+    }
+    return true;
+  }
+
+  function showTitleScreen(onStart) {
+    const overlay = document.getElementById('title-overlay');
+    const last = SaveSystem.getCurrentProfile() || localStorage.getItem('neoGodWars_lastProfile') || '';
+    const input = document.getElementById('title-name-input');
+    const btn = document.getElementById('title-start-btn');
+
+    input.value = last;
+    overlay.classList.remove('hidden');
+
+    function triggerStart() {
+      if (!startWithName(input.value)) {
+        toast('이름을 입력해주세요.');
+        return;
+      }
+      overlay.classList.add('hidden');
+      onStart();
+    }
+
+    overlay.onclick = (e) => {
+      if (e.target.id === 'title-overlay') document.getElementById('title-panel').classList.add('active');
+    };
+    btn.onclick = triggerStart;
+    input.onkeydown = (e) => { if (e.key === 'Enter') triggerStart(); };
+  }
+
+  function init() {
     document.querySelectorAll('.nav-btn').forEach((btn) => btn.addEventListener('click', () => {
       document.querySelectorAll('.nav-btn').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
       activeTab = btn.dataset.tab;
       renderTab();
     }));
+
     document.querySelector('.user-info').addEventListener('click', () => {
+      const p = GameState.get();
       const options = p.titlesUnlocked.map((t) => `<button class='btn-action' data-title='${t}'>${t} - ${BuffSystem.TITLE_EFFECTS[t]?.desc || ''}</button>`).join('<br>');
       modal('칭호 선택', options);
       document.querySelectorAll('[data-title]').forEach((b) => b.onclick = () => {
         p.profile.title = b.dataset.title; toast(`칭호 변경: ${b.dataset.title}`); SaveSystem.saveNow(); updateHeader(); document.getElementById('modal-overlay').classList.add('hidden');
       });
     });
+
     document.getElementById('btn-heal').addEventListener('click', () => {
+      const p = GameState.get();
       if (p.resources.gold >= 100) { p.resources.gold -= 100; p.stats.hp = Math.min(p.stats.hpMax, p.stats.hp + 20); SaveSystem.scheduleSave(); updateHeader(); }
     });
     document.getElementById('modal-close').onclick = () => document.getElementById('modal-overlay').classList.add('hidden');
     document.getElementById('modal-action-btn').onclick = () => document.getElementById('modal-overlay').classList.add('hidden');
 
-    setInterval(gameTick, 1000);
-    setInterval(() => SaveSystem.saveNow(), 15000);
+    showTitleScreen(() => {
+      const p = GameState.get();
+      if (!p.deck.length) p.deck = ['g_gr_c1'];
+      setInterval(gameTick, 1000);
+      setInterval(() => SaveSystem.saveNow(), 15000);
 
-    window.debug = {
-      addGold(v = 10000) { GameState.get().resources.gold += v; updateHeader(); SaveSystem.scheduleSave(); },
-      addUnit(id, c = 1) { GameState.gainUnit(id, c); renderTab(); SaveSystem.scheduleSave(); },
-      selfTest: window.selfTest,
-    };
+      window.debug = {
+        addGold(v = 10000) { GameState.get().resources.gold += v; updateHeader(); SaveSystem.scheduleSave(); },
+        addUnit(id, c = 1) { GameState.gainUnit(id, c); renderTab(); SaveSystem.scheduleSave(); },
+        selfTest: window.selfTest,
+      };
 
-    updateHeader();
-    renderTab();
+      updateHeader();
+      renderTab();
+    });
   }
 
   window.GameUI = { init, renderTab, updateHeader, gainExp, toast, modal, getActiveTab: () => activeTab, setActiveTab: (t) => { activeTab = t; } };

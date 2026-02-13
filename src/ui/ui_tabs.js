@@ -53,8 +53,10 @@
   }
 
   function cycleTarget(q, cycle) {
-    const base = q.mastery_max || 100;
-    return base + ((cycle - 1) * 50);
+    const baseRaw = Number(q.mastery_max);
+    const base = Number.isFinite(baseRaw) ? baseRaw : 100;
+    const c = Number.isFinite(Number(cycle)) ? Number(cycle) : 1;
+    return base + ((c - 1) * 50);
   }
 
   function chapterQuestList(chapter) {
@@ -355,36 +357,33 @@
     if (p.resources.gold < 1000) return toast('골드 부족');
     p.resources.gold -= 1000;
     const picked = pickGachaUnit();
-    const popup = window.open('', 'mercenary_summon', 'width=420,height=540');
 
-    if (!popup) {
-      GameState.gainUnit(picked.id, 1);
-      SaveSystem.saveNow();
-      toast(`${picked.name} 획득`);
-      return;
-    }
-
-    popup.document.write(`<!doctype html><html><head><meta charset='utf-8'><title>소환 중...</title>
-      <style>body{margin:0;background:#101522;color:#f7d36a;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif}.box{width:90%;text-align:center;background:#1b2338;border:1px solid #2f3c66;padding:24px;border-radius:12px}.slot{height:80px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;background:#0f1527;border-radius:8px;margin:12px 0}.msg{color:#9fb2e8}</style>
-      </head><body><div class='box'><h2>용병 소환 룰렛</h2><div id='slot' class='slot'>준비 중...</div><div class='msg'>신화의 바퀴가 회전합니다...</div></div></body></html>`);
-    popup.document.close();
+    const html = `<div class='gacha-modal'>
+      <div class='gacha-wheel-wrap'>
+        <div id='gacha-wheel' class='gacha-wheel'>준비 중...</div>
+      </div>
+      <div class='gacha-hint'>신화의 룰렛이 회전합니다...</div>
+      <div id='gacha-result' class='gacha-result'></div>
+    </div>`;
+    GameUI.modal('용병 소환', html);
 
     const names = DataAdapter.gods.map((g) => g.name);
-    const slot = popup.document.getElementById('slot');
+    const wheel = document.getElementById('gacha-wheel');
+    const resultBox = document.getElementById('gacha-result');
     let ticks = 0;
     const timer = setInterval(() => {
-      if (!slot) return;
-      slot.textContent = names[Math.floor(Math.random() * names.length)];
+      if (!wheel) return;
+      wheel.textContent = names[Math.floor(Math.random() * names.length)];
       ticks += 1;
-      if (ticks > 24) {
+      if (ticks > 28) {
         clearInterval(timer);
+        wheel.textContent = `🎉 ${picked.name}`;
+        resultBox.textContent = `${picked.name} 획득!`;
         GameState.gainUnit(picked.id, 1);
         SaveSystem.saveNow();
-        slot.textContent = `🎉 ${picked.name}`;
-        setTimeout(() => { try { popup.close(); } catch (_) {} }, 1200);
-        toast(`${picked.name} 획득`);
-        GameUI.renderTab();
         GameUI.updateHeader();
+        GameUI.renderTab();
+        toast(`${picked.name} 획득`);
       }
     }, 90);
   }
