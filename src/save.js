@@ -20,6 +20,9 @@
       } else if (v === 2) {
         save.saveVersion = 3;
         save.quests = save.quests?.progress ? save.quests : { progress: save.quests || {}, completed: {}, claimed: {} };
+      } else if (v === 3) {
+        save.saveVersion = 4;
+        save.quests = { ...(save.quests || {}), cycles: save.quests?.cycles || {} };
       }
       v = save.saveVersion;
     }
@@ -34,6 +37,10 @@
     out.resources = { ...d.resources, ...(save.resources || {}) };
     out.equipment = { ...d.equipment, ...(save.equipment || {}) };
     out.quests = { ...d.quests, ...(save.quests || {}) };
+    out.quests.progress = out.quests.progress || {};
+    out.quests.cycles = out.quests.cycles || {};
+    out.quests.completed = out.quests.completed || {};
+    out.quests.claimed = out.quests.claimed || {};
     out.units = out.units || {};
     out.inventory = out.inventory || {};
     out.buildings = out.buildings || {};

@@ -453,7 +453,7 @@ body {
 
 .modal-box {
     width: 100%;
-    max-width: 320px;
+    max-width: 420px;
     background-color: #1e1e1e;
     border: 2px solid var(--color-gold-dark);
     border-radius: 10px;
@@ -594,3 +594,33 @@ body {
     color: #fff;
     text-shadow: 0 2px 4px #000;
 }
+
+.portrait {
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    border: 1px solid #455;
+    background: radial-gradient(circle at 30% 25%, #4f6a9a, #1a2238 65%);
+    box-shadow: inset 0 0 12px rgba(255,255,255,0.08);
+}
+.portrait[data-tone='fire'] { background: radial-gradient(circle at 30% 25%, #ff9a4d, #5d1a05 70%); }
+.portrait[data-tone='water'] { background: radial-gradient(circle at 30% 25%, #64c1ff, #082951 70%); }
+.portrait[data-tone='earth'] { background: radial-gradient(circle at 30% 25%, #b0d26e, #344118 70%); }
+.portrait[data-tone='wind'] { background: radial-gradient(circle at 30% 25%, #d8deff, #3b4d7d 70%); }
+.portrait[data-tone='equip'] { background: radial-gradient(circle at 30% 25%, #f4d87e, #4f3c16 70%); }
+.portrait.boss { border-color: #d98243; box-shadow: 0 0 8px rgba(255, 102, 0, 0.5); }
+.portrait span { filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); }
+
+.battle-scene { text-align: left; }
+.battle-head { margin-bottom: 12px; color: #ffd36d; }
+.hp-row { display: grid; grid-template-columns: 52px 1fr 72px; gap: 8px; align-items: center; font-size: 12px; margin-bottom: 8px; }
+.hp-track { height: 10px; border-radius: 999px; background: #2d3445; overflow: hidden; }
+.hp-fill { height: 100%; transition: width .16s linear; }
+.hp-fill.ally { background: linear-gradient(90deg, #58e389, #1e9956); }
+.hp-fill.boss { background: linear-gradient(90deg, #ff7a6d, #ca2f2f); }
+.battle-turn { font-size: 12px; color: #9eb8ff; margin: 8px 0; }
+.battle-log-box { background: #0f1320; border: 1px solid #2f3d61; border-radius: 8px; height: 180px; overflow-y: auto; padding: 8px; font-size: 12px; line-height: 1.4; }

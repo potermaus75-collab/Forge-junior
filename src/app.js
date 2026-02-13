@@ -20,7 +20,7 @@
       p.deck = oldDeck;
 
       const migrated = SaveSystem.migrateSave({ saveVersion: 0, units: [{ id: 'g_gr_c1', count: 2 }] });
-      results.push({ name: 'save_migration', pass: migrated.saveVersion === GameState.SAVE_VERSION || migrated.saveVersion === 3 });
+      results.push({ name: 'save_migration', pass: migrated.saveVersion === GameState.SAVE_VERSION || migrated.saveVersion === 4 });
 
       const battle = CombatEngine.simulateBossBattle(p, 'boss_s_01');
       results.push({ name: 'battle_simulation', pass: battle.ok && Array.isArray(battle.logs) });

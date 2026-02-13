@@ -1,4 +1,14 @@
 (function () {
+  function unitName(id) { return DataAdapter.godMap.get(id)?.name || id; }
+  function itemName(id) { return DataAdapter.itemMap.get(id)?.name || id || '-'; }
+  function rankLabel(rank) { return ({ c: '일반', uc: '고급', r: '희귀', e: '영웅', l: '전설', g: '신화' }[rank] || '기타'); }
+
+  function portrait(kind, entity) {
+    const tone = entity.element || entity.type || 'neutral';
+    const icon = kind === 'boss' ? '👹' : (kind === 'item' ? (entity.slot === 'weapon' ? '⚔️' : entity.slot === 'armor' ? '🛡️' : '📦') : '🛡️');
+    return `<div class='portrait ${kind}' data-tone='${tone}'><span>${icon}</span></div>`;
+  }
+
   function renderHome(el) {
     const p = GameState.get();
     const deck = Balance.calculateDeckPower(p);
@@ -6,7 +16,7 @@
     el.innerHTML = `<h2 class='section-title'>대시보드</h2>
       <div class='card-item'><div class='card-info'><div class='card-title'>덱 전투력</div><div class='card-meta'>ATK ${deck.atk} / DEF ${deck.def} / ${deck.count}/${deck.capacity}</div></div></div>
       <div class='card-item'><div class='card-info'><div class='card-title'>경제</div><div class='card-meta'>수익 ${econ.income}/분 | 업킵 ${econ.upkeep}/분 | 순이익 ${econ.net}/분</div></div></div>
-      <div class='card-item'><div class='card-info'><div class='card-title'>튜토리얼 체크</div><div class='card-meta'>보스 1회 처치, 제작 1회, 퀘스트 완료를 달성하세요.</div></div></div>`;
+      <div class='card-item'><div class='card-info'><div class='card-title'>튜토리얼 체크</div><div class='card-meta'>보스 1회 처치, 제작 1회, 퀘스트 마스터 완료를 달성하세요.</div></div></div>`;
   }
 
   function classifyQuest(q) {
@@ -15,42 +25,71 @@
     return 'achievement';
   }
 
+  function ensureQuestState(p) {
+    p.quests.cycles = p.quests.cycles || {};
+    p.quests.progress = p.quests.progress || {};
+    p.quests.completed = p.quests.completed || {};
+    p.quests.claimed = p.quests.claimed || {};
+  }
+
+  function cycleTarget(cycle) { return 100 + ((cycle - 1) * 50); }
+
   function renderQuest(el, modal, toast) {
     const p = GameState.get();
     const quests = DataAdapter.getQuestList();
-    el.innerHTML = `<h2 class='section-title'>퀘스트</h2>`;
+    ensureQuestState(p);
+    el.innerHTML = `<h2 class='section-title'>퀘스트</h2><div class='card-item'><div class='card-info'>각 퀘스트는 1~3사이클(마스터)까지 완료해야 최종 클리어됩니다.</div></div>`;
     ['daily', 'weekly', 'achievement'].forEach((type) => {
       el.innerHTML += `<div style='margin:8px 0;color:gold'>${type.toUpperCase()}</div>`;
       quests.filter((q) => classifyQuest(q) === type).slice(0, 8).forEach((q) => {
+        const cycle = p.quests.cycles[q.id] || 1;
+        const target = cycleTarget(cycle);
         const prog = p.quests.progress[q.id] || 0;
-        const target = q.mastery_max || 100;
-        const done = prog >= target || p.quests.completed[q.id];
-        el.innerHTML += `<div class='card-item'><div class='card-info'><div class='card-title'>${q.name}</div><div class='card-meta'>${prog}/${target}</div></div>
-          <div class='card-action'><button class='btn-action ${done ? 'primary' : ''}' data-q='${q.id}'>${done ? (p.quests.claimed[q.id] ? '수령완료' : '보상수령') : '진행'}</button></div></div>`;
+        const masterDone = !!p.quests.completed[q.id];
+        const cycleDone = prog >= target;
+        const stateText = masterDone ? '마스터 완료' : `${cycle}/3 사이클 (${prog}/${target}%)`;
+        const btnText = masterDone ? (p.quests.claimed[q.id] ? '수령완료' : '보상수령') : (cycleDone ? '사이클 완료' : '진행');
+        el.innerHTML += `<div class='card-item'><div class='card-info'><div class='card-title'>${q.name}</div><div class='card-meta'>${stateText}</div></div>
+          <div class='card-action'><button class='btn-action ${masterDone || cycleDone ? 'primary' : ''}' data-q='${q.id}'>${btnText}</button></div></div>`;
       });
     });
 
     el.querySelectorAll('[data-q]').forEach((btn) => btn.onclick = () => {
       const id = btn.dataset.q;
       const q = quests.find((x) => x.id === id);
-      const target = q.mastery_max || 100;
+      const cycle = p.quests.cycles[id] || 1;
+      const target = cycleTarget(cycle);
       if (p.quests.completed[id] && !p.quests.claimed[id]) {
         p.quests.claimed[id] = true;
         p.resources.gold += q.rew_gold_max || 100;
-        GameUI.gainExp(q.rew_exp || 10);
-        toast('퀘스트 보상 수령'); SaveSystem.saveNow(); renderQuest(el, modal, toast); return;
+        GameUI.gainExp((q.rew_exp || 10) * 2);
+        toast('마스터 퀘스트 보상 수령'); SaveSystem.saveNow(); renderQuest(el, modal, toast); return;
       }
+      if (p.quests.completed[id]) return;
       if (p.stats.energy < (q.req_energy || 1)) return toast('에너지 부족');
+
       p.stats.energy -= q.req_energy || 1;
-      const gain = 10;
+      const gain = 10 + ((cycle - 1) * 5);
       p.quests.progress[id] = (p.quests.progress[id] || 0) + gain;
       p.resources.gold += q.rew_gold_min || 0;
       GameUI.gainExp(q.rew_exp || 1);
       if (Math.random() < (q.drop_rate || 0)) GameState.gainItem(q.drop_item_id, 1);
-      if (p.quests.progress[id] >= target) p.quests.completed[id] = true;
-      toast(`${q.name} 진행 +${gain}`);
+
+      if (p.quests.progress[id] >= target) {
+        if (cycle >= 3) {
+          p.quests.completed[id] = true;
+          p.quests.progress[id] = target;
+          toast(`${q.name} 마스터 사이클 완료!`);
+        } else {
+          p.quests.cycles[id] = cycle + 1;
+          p.quests.progress[id] = 0;
+          toast(`${q.name} ${cycle}사이클 완료! 난이도 상승`);
+        }
+      } else toast(`${q.name} 진행 +${gain}%`);
+
       SaveSystem.scheduleSave();
       renderQuest(el, modal, toast);
+      GameUI.updateHeader();
     });
   }
 
@@ -59,13 +98,49 @@
     return Object.entries(BOSSES).filter(([id, b]) => b.rank !== 'event' || ((month + id.length) % 2 === 0));
   }
 
+  function openBattlePlayback(boss, result) {
+    const totalTurns = Math.max(1, result.turns.length);
+    const html = `<div class='battle-scene'>
+      <div class='battle-head'><strong>${boss.name}</strong> 자동전투 재생</div>
+      <div class='hp-row'><span>아군 HP</span><div class='hp-track'><div id='team-hp' class='hp-fill ally' style='width:100%'></div></div><span id='team-hp-text'>${result.teamHpMax}/${result.teamHpMax}</span></div>
+      <div class='hp-row'><span>보스 HP</span><div class='hp-track'><div id='boss-hp' class='hp-fill boss' style='width:100%'></div></div><span id='boss-hp-text'>${result.bossHpMax}/${result.bossHpMax}</span></div>
+      <div id='battle-turn' class='battle-turn'>T0/${totalTurns}</div>
+      <div id='battle-log-box' class='battle-log-box'></div>
+    </div>`;
+    GameUI.modal('전투 리플레이', html);
+    const logBox = document.getElementById('battle-log-box');
+    const teamBar = document.getElementById('team-hp');
+    const bossBar = document.getElementById('boss-hp');
+    const teamTxt = document.getElementById('team-hp-text');
+    const bossTxt = document.getElementById('boss-hp-text');
+    const turnText = document.getElementById('battle-turn');
+
+    let i = 0;
+    const timer = setInterval(() => {
+      if (i >= totalTurns) {
+        clearInterval(timer);
+        return;
+      }
+      const frame = result.turns[i];
+      teamBar.style.width = `${Math.max(0, Math.min(100, (frame.teamHp / result.teamHpMax) * 100))}%`;
+      bossBar.style.width = `${Math.max(0, Math.min(100, (frame.bossHp / result.bossHpMax) * 100))}%`;
+      teamTxt.textContent = `${frame.teamHp}/${result.teamHpMax}`;
+      bossTxt.textContent = `${frame.bossHp}/${result.bossHpMax}`;
+      turnText.textContent = `T${frame.turn}/${totalTurns}`;
+      logBox.innerHTML += `<div>${frame.log}</div>`;
+      logBox.scrollTop = logBox.scrollHeight;
+      i += 1;
+    }, 180);
+  }
+
   function renderBattle(el, modal, toast) {
     const p = GameState.get();
     const deck = Balance.calculateDeckPower(p);
-    el.innerHTML = `<h2 class='section-title'>보스 전투</h2><div class='card-item'><div class='card-info'><div class='card-title'>현재 덱</div><div class='card-meta'>${(p.deck || []).join(', ') || '없음'} | 전투력 ${deck.atk + deck.def}</div></div></div><div id='battle-log' class='card-item'><div class='card-info'>전투 로그 없음</div></div>`;
+    const deckNames = (p.deck || []).map(unitName).join(', ');
+    el.innerHTML = `<h2 class='section-title'>보스 전투</h2><div class='card-item'><div class='card-info'><div class='card-title'>현재 덱</div><div class='card-meta'>${deckNames || '없음'} | 전투력 ${deck.atk + deck.def}</div></div></div>`;
     availableBosses().forEach(([id, b]) => {
       const cd = (p.bossCd[id] || 0) - Date.now();
-      el.innerHTML += `<div class='card-item'><div class='card-info'><div class='card-title'>${b.name}</div><div class='card-meta'>STM ${b.req_stamina} | 제한 ${Math.floor(b.time_limit/60)}분 | CD <span id='cd-${id}'>${cd > 0 ? Math.ceil(cd / 1000) : 0}</span></div></div><div class='card-action'><button class='btn-action primary' data-boss='${id}'>입장</button></div></div>`;
+      el.innerHTML += `<div class='card-item'>${portrait('boss', b)}<div class='card-info'><div class='card-title'>${b.name}</div><div class='card-meta'>STM ${b.req_stamina} | 제한 ${Math.floor(b.time_limit / 60)}분 | CD <span id='cd-${id}'>${cd > 0 ? Math.ceil(cd / 1000) : 0}</span></div></div><div class='card-action'><button class='btn-action primary' data-boss='${id}'>입장</button></div></div>`;
     });
     el.querySelectorAll('[data-boss]').forEach((btn) => btn.onclick = () => {
       const id = btn.dataset.boss;
@@ -83,15 +158,16 @@
         else GameState.gainItem(result.rewards.card, 1);
         result.rewards.extraDrops.forEach((d) => GameState.gainItem(d.id, d.count));
         p.bossCd[id] = Date.now() + Math.min(3600 * 1000, boss.time_limit * 1000);
-        modal('승리', `${boss.name} 처치 성공`);
-      } else {
-        p.metrics.battlesLost += 1;
-        modal('패배', result.timeout ? '시간 초과' : '전멸');
-      }
+      } else p.metrics.battlesLost += 1;
+
       p.battle.lastResult = result;
       SaveSystem.saveNow();
       renderBattle(el, modal, toast);
-      document.querySelector('#battle-log .card-info').innerHTML = (p.battle.log || []).join('<br>');
+      openBattlePlayback(boss, result);
+      setTimeout(() => {
+        if (result.win) modal('승리', `${boss.name} 처치 성공`);
+        else modal('패배', result.timeout ? '시간 초과' : '전멸');
+      }, Math.min(4000, Math.max(1000, result.turns.length * 180 + 200)));
       GameUI.updateHeader();
     });
   }
@@ -109,31 +185,41 @@
   function autoDeck() {
     const p = GameState.get();
     const cap = GameState.deckCapacity();
-    const arr = Object.entries(p.units).map(([id, c]) => ({ id, c, g: DataAdapter.godMap.get(id) })).filter((x) => x.g).sort((a, b) => (b.g.atk + b.g.def) - (a.g.atk + a.g.def));
-    const deck = [];
-    arr.forEach((u) => { for (let i = 0; i < u.c && deck.length < cap; i += 1) deck.push(u.id); });
-    p.deck = deck;
+    p.deck.forEach((id) => GameState.gainUnit(id, 1));
+    p.deck = [];
+    const arr = Object.entries(p.units)
+      .map(([id, c]) => ({ id, c, g: DataAdapter.godMap.get(id) }))
+      .filter((x) => x.g)
+      .sort((a, b) => (b.g.atk + b.g.def) - (a.g.atk + a.g.def));
+    arr.forEach((u) => {
+      for (let i = 0; i < u.c && p.deck.length < cap; i += 1) {
+        if (GameState.consumeUnit(u.id, 1)) p.deck.push(u.id);
+      }
+    });
   }
 
   function renderUnit(el, toast) {
     const p = GameState.get();
     const cap = GameState.deckCapacity();
-    el.innerHTML = `<h2 class='section-title'>부대 & 덱 편성</h2><button class='btn-action' id='btn-auto'>자동 정렬</button><div class='card-item'><div class='card-info'>덱 ${p.deck.length}/${cap}: ${(p.deck || []).join(', ')}</div></div>`;
+    const deckNames = (p.deck || []).map(unitName).join(', ');
+    el.innerHTML = `<h2 class='section-title'>부대 & 덱 편성</h2><button class='btn-action' id='btn-auto'>자동 정렬</button><div class='card-item'><div class='card-info'>덱 ${p.deck.length}/${cap}: ${deckNames || '없음'}</div></div>`;
     Object.entries(p.units).forEach(([id, count]) => {
       const g = DataAdapter.godMap.get(id); if (!g) return;
-      el.innerHTML += `<div class='card-item'><div class='card-info'><div class='card-title'>${g.name}</div><div class='card-meta'>보유 ${count}</div></div><div class='card-action'><button class='btn-action' data-add='${id}'>추가</button><button class='btn-action' data-rem='${id}'>제거</button></div></div>`;
+      el.innerHTML += `<div class='card-item'>${portrait('unit', g)}<div class='card-info'><div class='card-title'>${g.name}</div><div class='card-meta'>등급 ${rankLabel(g.rank)} | 보유 ${count}</div></div><div class='card-action'><button class='btn-action' data-add='${id}'>추가</button><button class='btn-action' data-rem='${id}'>제거</button></div></div>`;
     });
     document.getElementById('btn-auto').onclick = () => { autoDeck(); SaveSystem.saveNow(); renderUnit(el, toast); };
     el.querySelectorAll('[data-add]').forEach((b) => b.onclick = () => {
       const id = b.dataset.add;
-      const used = p.deck.filter((x) => x === id).length;
       if (p.deck.length >= cap) return toast('capacity 초과');
-      if (used >= (p.units[id] || 0)) return toast('보유 수량 초과');
+      if (!GameState.consumeUnit(id, 1)) return toast('보유 수량 초과');
       p.deck.push(id); SaveSystem.saveNow(); renderUnit(el, toast);
     });
     el.querySelectorAll('[data-rem]').forEach((b) => b.onclick = () => {
       const i = p.deck.lastIndexOf(b.dataset.rem);
-      if (i >= 0) p.deck.splice(i, 1);
+      if (i >= 0) {
+        p.deck.splice(i, 1);
+        GameState.gainUnit(b.dataset.rem, 1);
+      }
       SaveSystem.scheduleSave(); renderUnit(el, toast);
     });
   }
@@ -151,20 +237,22 @@
   function renderInventory(el, toast) {
     const p = GameState.get();
     const equips = ITEMS.filter((i) => i.type === 'equip');
-    el.innerHTML = `<h2 class='section-title'>인벤토리 / 제작</h2><div class='card-item'><div class='card-info'>장착 무기: ${p.equipment.weapon || '-'} / 방어구: ${p.equipment.armor || '-'}</div></div>`;
+    el.innerHTML = `<h2 class='section-title'>인벤토리 / 제작</h2><div class='card-item'><div class='card-info'>장착 무기: ${itemName(p.equipment.weapon)} / 방어구: ${itemName(p.equipment.armor)}</div></div>`;
     equips.forEach((i) => {
       const own = p.inventory[i.id] || 0;
-      el.innerHTML += `<div class='card-item'><div class='card-info'><div class='card-title'>${i.name}</div><div class='card-meta'>보유 ${own}</div></div><div class='card-action'><button class='btn-action' data-eq='${i.id}'>장착</button><button class='btn-action' data-uneq='${i.slot}'>해제</button></div></div>`;
+      el.innerHTML += `<div class='card-item'>${portrait('item', i)}<div class='card-info'><div class='card-title'>${i.name}</div><div class='card-meta'>보유 ${own}</div></div><div class='card-action'><button class='btn-action' data-eq='${i.id}'>장착</button><button class='btn-action' data-uneq='${i.slot}'>해제</button></div></div>`;
     });
     Object.entries(p.inventory).forEach(([id, c]) => {
       const i = DataAdapter.itemMap.get(id); if (!i || i.type === 'equip') return;
-      el.innerHTML += `<div class='card-item'><div class='card-info'><div class='card-title'>${i.name}</div><div class='card-meta'>x${c}</div></div><div class='card-action'>${i.type === 'consumable' ? `<button class='btn-action' data-use='${id}'>사용</button>` : ''}</div></div>`;
+      el.innerHTML += `<div class='card-item'>${portrait('item', i)}<div class='card-info'><div class='card-title'>${i.name}</div><div class='card-meta'>x${c}</div></div><div class='card-action'>${i.type === 'consumable' ? `<button class='btn-action' data-use='${id}'>사용</button>` : ''}</div></div>`;
     });
 
     el.innerHTML += `<h3 class='section-title'>제작</h3>`;
     RECIPES.slice(0, 20).forEach((r) => {
       const resultName = DataAdapter.godMap.get(r.result)?.name || DataAdapter.itemMap.get(r.result)?.name || r.result;
-      el.innerHTML += `<div class='card-item'><div class='card-info'><div class='card-title'>${resultName}</div><div class='card-meta'>${r.mat1} + ${r.mat2} | 비용 ${r.cost} | ${r.chance}%</div></div><div class='card-action'><button class='btn-action primary' data-craft='${r.id}'>제작</button></div></div>`;
+      const mat1 = DataAdapter.godMap.get(r.mat1)?.name || DataAdapter.itemMap.get(r.mat1)?.name || r.mat1;
+      const mat2 = DataAdapter.godMap.get(r.mat2)?.name || DataAdapter.itemMap.get(r.mat2)?.name || r.mat2;
+      el.innerHTML += `<div class='card-item'><div class='card-info'><div class='card-title'>${resultName}</div><div class='card-meta'>${mat1} + ${mat2} | 비용 ${r.cost} | ${r.chance}%</div></div><div class='card-action'><button class='btn-action primary' data-craft='${r.id}'>제작</button></div></div>`;
     });
 
     el.querySelectorAll('[data-eq]').forEach((b) => b.onclick = () => {
@@ -196,18 +284,51 @@
   function hasMat(p, id) { return DataAdapter.godMap.has(id) ? (p.units[id] || 0) > 0 : (p.inventory[id] || 0) > 0; }
   function consumeMat(p, id) { if (DataAdapter.godMap.has(id)) GameState.consumeUnit(id, 1); else GameState.consumeItem(id, 1); }
 
-  function doGacha(toast) {
-    const p = GameState.get();
-    if (p.resources.gold < 1000) return toast('골드 부족');
-    p.resources.gold -= 1000;
+  function pickGachaUnit() {
     const roll = Math.random() * 100;
     const rank = roll > 99 ? 'l' : roll > 95 ? 'e' : roll > 80 ? 'r' : roll > 50 ? 'uc' : 'c';
     let pool = DataAdapter.gods.filter((g) => g.rank === rank);
     if (!pool.length) pool = DataAdapter.gods.filter((g) => g.rank === 'c');
-    const picked = pool[Math.floor(Math.random() * pool.length)];
-    GameState.gainUnit(picked.id, 1);
-    SaveSystem.saveNow();
-    toast(`${picked.name} 획득`);
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function doGacha(toast) {
+    const p = GameState.get();
+    if (p.resources.gold < 1000) return toast('골드 부족');
+    p.resources.gold -= 1000;
+    const picked = pickGachaUnit();
+    const popup = window.open('', 'mercenary_summon', 'width=420,height=540');
+
+    if (!popup) {
+      GameState.gainUnit(picked.id, 1);
+      SaveSystem.saveNow();
+      toast(`${picked.name} 획득`);
+      return;
+    }
+
+    popup.document.write(`<!doctype html><html><head><meta charset='utf-8'><title>소환 중...</title>
+      <style>body{margin:0;background:#101522;color:#f7d36a;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif}.box{width:90%;text-align:center;background:#1b2338;border:1px solid #2f3c66;padding:24px;border-radius:12px}.slot{height:80px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;background:#0f1527;border-radius:8px;margin:12px 0}.msg{color:#9fb2e8}</style>
+      </head><body><div class='box'><h2>용병 소환 룰렛</h2><div id='slot' class='slot'>준비 중...</div><div class='msg'>신화의 바퀴가 회전합니다...</div></div></body></html>`);
+    popup.document.close();
+
+    const names = DataAdapter.gods.map((g) => g.name);
+    const slot = popup.document.getElementById('slot');
+    let ticks = 0;
+    const timer = setInterval(() => {
+      if (!slot) return;
+      slot.textContent = names[Math.floor(Math.random() * names.length)];
+      ticks += 1;
+      if (ticks > 24) {
+        clearInterval(timer);
+        GameState.gainUnit(picked.id, 1);
+        SaveSystem.saveNow();
+        slot.textContent = `🎉 ${picked.name}`;
+        setTimeout(() => { try { popup.close(); } catch (_) {} }, 1200);
+        toast(`${picked.name} 획득`);
+        GameUI.renderTab();
+        GameUI.updateHeader();
+      }
+    }, 90);
   }
 
   function renderShop(el, toast) {
@@ -219,7 +340,7 @@
       el.innerHTML += `<div class='card-item'><div class='card-info'><div class='card-title'>${b.name} Lv.${lv}</div><div class='card-meta'>수익 ${b.income}/h | ${cost}G</div></div><div class='card-action'><button class='btn-action' data-bld='${b.id}'>구매</button></div></div>`;
     });
     ITEMS.filter((i) => i.cost > 0).forEach((i) => {
-      el.innerHTML += `<div class='card-item'><div class='card-info'><div class='card-title'>${i.name}</div><div class='card-meta'>${i.cost}G</div></div><div class='card-action'><button class='btn-action' data-item='${i.id}'>구매</button></div></div>`;
+      el.innerHTML += `<div class='card-item'>${portrait('item', i)}<div class='card-info'><div class='card-title'>${i.name}</div><div class='card-meta'>${i.cost}G</div></div><div class='card-action'><button class='btn-action' data-item='${i.id}'>구매</button></div></div>`;
     });
     document.getElementById('gacha').onclick = () => { doGacha(toast); GameUI.updateHeader(); };
     el.querySelectorAll('[data-bld]').forEach((b) => b.onclick = () => {

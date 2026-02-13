@@ -1,5 +1,5 @@
 (function () {
-  const SAVE_VERSION = 3;
+  const SAVE_VERSION = 4;
   const now = () => Date.now();
   const DEFAULT_PLAYER = {
     saveVersion: SAVE_VERSION,
@@ -12,7 +12,7 @@
     inventory: { pot_hp_s: 3, mat_g_01: 3, mat_g_02: 3, w_001: 1, a_001: 1 },
     buildings: {},
     titlesUnlocked: ['초심자'],
-    quests: { progress: {}, completed: {}, claimed: {} },
+    quests: { progress: {}, cycles: {}, completed: {}, claimed: {} },
     bossCd: {},
     battle: { log: [], activeBossId: null, lastResult: null },
     metrics: { battlesWon: 0, battlesLost: 0, crafts: 0, goldEarnedTotal: 0, bossKills: 0 },
