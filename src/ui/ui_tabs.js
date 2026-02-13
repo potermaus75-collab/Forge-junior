@@ -63,6 +63,15 @@
     return chapter.list.filter((q) => !!q.id);
   }
 
+  function ensureQuestState(p) {
+    p.quests.cycles = p.quests.cycles || {};
+    p.quests.progress = p.quests.progress || {};
+    p.quests.completed = p.quests.completed || {};
+    p.quests.claimed = p.quests.claimed || {};
+  }
+
+  function cycleTarget(cycle) { return 100 + ((cycle - 1) * 50); }
+
   function renderQuest(el, modal, toast) {
     const p = GameState.get();
     ensureQuestState(p);
