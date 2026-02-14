@@ -32,10 +32,11 @@
       document.getElementById(`max-${k}`).innerText = Math.floor(max);
     });
 
-    const eLeft = Math.max(0, 30 - Math.floor((p.timers.energyRegenAcc || 0) % 30));
-    const sLeft = Math.max(0, 45 - Math.floor((p.timers.staminaRegenAcc || 0) % 45));
-    document.getElementById('timer-energy').innerText = p.stats.energy >= p.stats.energyMax ? 'MAX' : `00:${String(eLeft).padStart(2, '0')}`;
-    document.getElementById('timer-stamina').innerText = p.stats.stamina >= p.stats.staminaMax ? 'MAX' : `00:${String(sLeft).padStart(2, '0')}`;
+    const eLeft = Math.max(0, 180 - Math.floor((p.timers.energyRegenAcc || 0) % 180));
+    const sLeft = Math.max(0, 180 - Math.floor((p.timers.staminaRegenAcc || 0) % 180));
+    const fmt = (v) => `${String(Math.floor(v / 60)).padStart(2, '0')}:${String(v % 60).padStart(2, '0')}`;
+    document.getElementById('timer-energy').innerText = p.stats.energy >= p.stats.energyMax ? 'MAX' : fmt(eLeft);
+    document.getElementById('timer-stamina').innerText = p.stats.stamina >= p.stats.staminaMax ? 'MAX' : fmt(sLeft);
   }
 
   function renderTab() {
@@ -69,15 +70,15 @@
       const reg = BuffSystem.applyBuffs({ regenMul: 1 }, { player: p, deckUnits: Balance.selectedDeckUnits(p) }).regenMul || 1;
       p.timers.energyRegenAcc = (p.timers.energyRegenAcc || 0) + (dt * reg);
       p.timers.staminaRegenAcc = (p.timers.staminaRegenAcc || 0) + (dt * reg);
-      const energyGain = Math.floor(p.timers.energyRegenAcc / 30);
-      const staminaGain = Math.floor(p.timers.staminaRegenAcc / 45);
+      const energyGain = Math.floor(p.timers.energyRegenAcc / 180);
+      const staminaGain = Math.floor(p.timers.staminaRegenAcc / 180);
       if (energyGain > 0) {
         p.stats.energy = Math.min(p.stats.energyMax, p.stats.energy + energyGain);
-        p.timers.energyRegenAcc -= energyGain * 30;
+        p.timers.energyRegenAcc -= energyGain * 180;
       }
       if (staminaGain > 0) {
         p.stats.stamina = Math.min(p.stats.staminaMax, p.stats.stamina + staminaGain);
-        p.timers.staminaRegenAcc -= staminaGain * 45;
+        p.timers.staminaRegenAcc -= staminaGain * 180;
       }
       const econ = Balance.calcEconomyPerMin(p);
       const addGold = (econ.net / 60) * dt;

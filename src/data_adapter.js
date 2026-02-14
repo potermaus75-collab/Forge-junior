@@ -9,11 +9,19 @@
     g: [{ id: 'god_wrath', name: '신의 분노', type: 'damage', power: 1.8, critBonus: 0.2, cooldown: 2 }],
   };
 
-  const gods = GODS.map((g) => {
+  const gods = GODS.map((g, idx) => {
     const tokens = g.id.split('_');
     const mythKey = tokens[1] || 'gr';
+    const category = g.category || (idx % 7 === 0 ? 'limited' : idx % 6 === 0 ? 'honor_shop' : idx % 5 === 0 ? 'event' : idx % 4 === 0 ? 'support_shop' : idx % 3 === 0 ? 'craft_only' : 'basic_shop');
     return {
       ...g,
+      category,
+      tier: g.tier || (g.rank === 'c' ? '1st' : g.rank === 'r' ? '2nd' : g.rank === 'g' ? '3rd' : '1st'),
+      mainBuff: g.mainBuff || (g.element === 'fire' || g.element === 'wind' ? 'ATK%+' : 'DEF%+'),
+      subBuff: g.subBuff || (g.element === 'water' || g.element === 'earth' ? 'Shield+' : 'StaminaRegen+'),
+      slotConstraint: g.slotConstraint || 'any',
+      condition: g.condition || { type: 'adjacent_element', value: g.element },
+      awakenTo: g.awakenTo || null,
       summonCost: g.summonCost ?? g.cost ?? 100,
       upkeepPerMin: g.upkeepPerMin ?? Math.max(1, Math.floor((g.cost ?? 10) / 4)),
       myth: g.myth ?? mythMap[mythKey] ?? 'mixed',

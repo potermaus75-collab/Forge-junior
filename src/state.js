@@ -1,10 +1,10 @@
 (function () {
-  const SAVE_VERSION = 5;
+  const SAVE_VERSION = 6;
   const now = () => Date.now();
   const DEFAULT_PLAYER = {
     saveVersion: SAVE_VERSION,
     profile: { name: '신입 모험가', title: '초심자', level: 1, exp: 0, unlocked_titles: ['초심자'] },
-    stats: { hp: 100, hpMax: 100, energy: 50, energyMax: 50, stamina: 10, staminaMax: 10 },
+    stats: { hp: 100, hpMax: 100, energy: 50, energyMax: 50, stamina: 10, staminaMax: 10, atk: 30, def: 30 },
     resources: { gold: 2000, gem: 20 },
     units: { g_gr_c1: 5 },
     deck: ['g_gr_c1', 'g_gr_c1', 'g_gr_c1'],

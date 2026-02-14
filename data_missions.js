@@ -1,7 +1,7 @@
 // data_missions.js
 // Source: user-provided mission table screenshots (transcribed)
 
-export const MISSIONS = [
+const MISSIONS = [
   {
     chapterId: "1",
     chapterName: "튜토리얼",
@@ -472,3 +472,5 @@ export const MISSIONS = [
     ],
   },
 ];
+
+window.MISSIONS = MISSIONS;

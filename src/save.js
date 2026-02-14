@@ -39,6 +39,9 @@
       } else if (v === 4) {
         save.saveVersion = 5;
         save.quests = { ...(save.quests || {}), doneCycles: save.quests?.doneCycles || {}, chapterCycle: save.quests?.chapterCycle || {} };
+      } else if (v === 5) {
+        save.saveVersion = 6;
+        save.stats = { ...(save.stats || {}), atk: save.stats?.atk || 30, def: save.stats?.def || 30 };
       }
       v = save.saveVersion;
     }
@@ -66,7 +69,7 @@
     out.timers = { ...d.timers, ...(out.timers || {}) };
 
     ['gold', 'gem'].forEach((k) => out.resources[k] = Math.max(0, sanitizeNum(out.resources[k], d.resources[k])));
-    ['hp', 'hpMax', 'energy', 'energyMax', 'stamina', 'staminaMax'].forEach((k) => out.stats[k] = Math.max(0, sanitizeNum(out.stats[k], d.stats[k])));
+    ['hp', 'hpMax', 'energy', 'energyMax', 'stamina', 'staminaMax', 'atk', 'def'].forEach((k) => out.stats[k] = Math.max(0, sanitizeNum(out.stats[k], d.stats[k])));
     Object.keys(out.units).forEach((id) => {
       if (!DataAdapter.godMap.has(id) || !Number.isFinite(out.units[id]) || out.units[id] < 0) delete out.units[id];
       else out.units[id] = Math.floor(out.units[id]);
